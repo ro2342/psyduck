@@ -81,16 +81,90 @@ function duckBodyMarkup({ bodyColor, bellyColor, beakColor, face, accessory }) {
   `;
 }
 
+// Arte original do mascote principal, desenhada à mão pelo usuário
+// (não é reprodução de sprite oficial do Pokémon — por isso é seguro
+// usar num repositório/site público). Tem sua própria animação de
+// piscar e balançar embutida via <style> — por isso não parametriza
+// cor por variante como duckBodyMarkup faz; os patinhos colecionáveis
+// da fazenda continuam usando o design simples recolorável.
+// O humor (mood) ainda decide o texto do badge (MOOD_LABELS), só não
+// muda mais a expressão do rosto — o desenho fixo já tem carinha
+// própria com piscar.
 function renderMascotSvg(mood) {
-  const markup = duckBodyMarkup({
-    bodyColor: "#fbd669",
-    bellyColor: "#f6c445",
-    beakColor: "#f2861f",
-    face: FACE_BY_MOOD[mood],
-  });
   return `
-  <svg viewBox="0 0 512 320" class="mascot-svg mascot-${mood}" role="img" aria-label="Mascote Psyduck: ${MOOD_LABELS[mood]}">
-    ${markup}
+  <svg viewBox="0 0 240 260" class="mascot-svg mascot-${mood}" role="img" aria-label="Mascote Psyduck: ${MOOD_LABELS[mood]}" shape-rendering="crispEdges">
+    <rect x="98" y="8" width="4" height="10" fill="#2a2a2a"/>
+    <rect x="104" y="14" width="4" height="10" fill="#2a2a2a"/>
+    <rect x="110" y="8" width="4" height="10" fill="#2a2a2a"/>
+    <rect x="70" y="30" width="6" height="8" fill="#b8752a"/>
+    <rect x="76" y="24" width="72" height="6" fill="#b8752a"/>
+    <rect x="148" y="30" width="6" height="8" fill="#b8752a"/>
+    <rect x="76" y="30" width="72" height="6" fill="#d4923c"/>
+    <rect x="70" y="36" width="86" height="6" fill="#e8a544"/>
+    <rect x="62" y="42" width="6" height="52" fill="#b8752a"/>
+    <rect x="68" y="42" width="6" height="52" fill="#c9832e"/>
+    <rect x="74" y="42" width="82" height="52" fill="#e8a544"/>
+    <rect x="74" y="46" width="82" height="4" fill="#eeb562"/>
+    <rect x="74" y="54" width="4" height="4" fill="#d4923c"/>
+    <rect x="82" y="54" width="4" height="4" fill="#d4923c"/>
+    <rect x="90" y="54" width="4" height="4" fill="#d4923c"/>
+    <rect x="128" y="54" width="4" height="4" fill="#d4923c"/>
+    <rect x="136" y="54" width="4" height="4" fill="#d4923c"/>
+    <rect x="144" y="54" width="4" height="4" fill="#d4923c"/>
+    <rect x="78" y="62" width="4" height="4" fill="#d4923c"/>
+    <rect x="86" y="62" width="4" height="4" fill="#d4923c"/>
+    <rect x="132" y="62" width="4" height="4" fill="#d4923c"/>
+    <rect x="140" y="62" width="4" height="4" fill="#d4923c"/>
+    <rect x="156" y="42" width="6" height="52" fill="#c9832e"/>
+    <rect x="162" y="42" width="6" height="52" fill="#b8752a"/>
+    <rect x="70" y="94" width="94" height="6" fill="#b8752a"/>
+    <rect x="78" y="50" width="28" height="28" fill="#fdf6e5"/>
+    <rect x="78" y="50" width="28" height="4" fill="#fff"/>
+    <rect x="118" y="50" width="28" height="28" fill="#fdf6e5"/>
+    <rect x="118" y="50" width="28" height="4" fill="#fff"/>
+    <g class="mascot-eye-l">
+      <rect x="86" y="60" width="12" height="12" fill="#232323"/>
+      <rect x="86" y="60" width="5" height="5" fill="#fdf6e5"/>
+    </g>
+    <g class="mascot-eye-r">
+      <rect x="126" y="60" width="12" height="12" fill="#232323"/>
+      <rect x="126" y="60" width="5" height="5" fill="#fdf6e5"/>
+    </g>
+    <rect x="70" y="78" width="8" height="6" fill="#b8752a"/>
+    <rect x="148" y="78" width="8" height="6" fill="#b8752a"/>
+    <rect x="86" y="86" width="60" height="18" fill="#fbeecb"/>
+    <rect x="86" y="86" width="60" height="4" fill="#fff8ea"/>
+    <rect x="86" y="102" width="60" height="6" fill="#d4a758"/>
+    <rect x="64" y="102" width="112" height="6" fill="#b8752a"/>
+    <rect x="64" y="108" width="112" height="18" fill="#c9832e"/>
+    <rect x="72" y="126" width="96" height="80" fill="#e8a544"/>
+    <rect x="72" y="126" width="96" height="6" fill="#eeb562"/>
+    <rect x="80" y="134" width="6" height="14" fill="#d4923c"/>
+    <rect x="80" y="152" width="6" height="14" fill="#d4923c"/>
+    <rect x="80" y="170" width="6" height="14" fill="#d4923c"/>
+    <rect x="96" y="140" width="6" height="14" fill="#d4923c"/>
+    <rect x="96" y="158" width="6" height="14" fill="#d4923c"/>
+    <rect x="112" y="134" width="6" height="14" fill="#d4923c"/>
+    <rect x="112" y="152" width="6" height="14" fill="#d4923c"/>
+    <rect x="112" y="170" width="6" height="14" fill="#d4923c"/>
+    <rect x="64" y="130" width="8" height="68" fill="#b8752a"/>
+    <rect x="72" y="130" width="6" height="68" fill="#c9832e"/>
+    <rect x="162" y="130" width="6" height="68" fill="#c9832e"/>
+    <rect x="168" y="130" width="8" height="68" fill="#b8752a"/>
+    <rect x="72" y="206" width="96" height="6" fill="#b8752a"/>
+    <rect x="72" y="212" width="96" height="12" fill="#c9832e"/>
+    <rect x="82" y="138" width="76" height="48" fill="#f6c877"/>
+    <rect x="82" y="138" width="76" height="4" fill="#ffd98f"/>
+    <rect x="82" y="186" width="76" height="12" fill="#d4a758"/>
+    <rect x="168" y="178" width="20" height="18" fill="#c9832e"/>
+    <rect x="168" y="178" width="20" height="4" fill="#d4923c"/>
+    <rect x="176" y="196" width="16" height="14" fill="#c9832e"/>
+    <rect x="86" y="224" width="20" height="10" fill="#f6c877"/>
+    <rect x="86" y="234" width="20" height="8" fill="#b8752a"/>
+    <rect x="134" y="224" width="20" height="10" fill="#f6c877"/>
+    <rect x="134" y="234" width="20" height="8" fill="#b8752a"/>
+    <rect x="72" y="244" width="44" height="10" fill="#2a2a2a"/>
+    <rect x="124" y="244" width="44" height="10" fill="#2a2a2a"/>
   </svg>`;
 }
 

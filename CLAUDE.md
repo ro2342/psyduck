@@ -30,7 +30,7 @@ acompanhado até o fim.
   JS sem build, não Next.js). Só implementar algo de lá se o usuário
   pedir explicitamente aquele item específico.
 
-## Estado atual (v0.1.10)
+## Estado atual (v0.1.11)
 
 Só existe o PWA (`www/`), rodando 100% local — **sem sync com nuvem,
 sem app nativo ainda** (Obsidian/clima/livros já existem, mas Google
@@ -372,6 +372,60 @@ Itens do `auditoria-visual-psyduck.md` **não cobertos** por essa leva
 (`transition: transform 0.12s ease` em `.btn` ainda existe), scrollbar
 com radius residual de estilo suave. `SPEC.md` não foi tocado — ver
 nota no topo do arquivo sobre tratá-lo como referência, não backlog.
+
+**v0.1.11 (5 correções depois do usuário usar de verdade)**:
+1. **Formulário de Auditoria de Tempo cortado** no rodapé da coluna
+   Moedas: `.time-audit-mini` era uma linha (`display:flex` horizontal)
+   com atividade+minutos+botão, e numa coluna estreita o segundo input
+   saía pra fora sem aparecer. Virou empilhado (`flex-direction: column`),
+   cada campo na sua própria linha — funciona em qualquer largura de
+   coluna.
+2. **Gráfico de clima ("próximas horas") não funcionava**: bug real em
+   `weather.js` — `forecast_days=1` só devolve as horas de "hoje", e
+   perto do fim do dia sobravam poucas (ou quase nenhuma) horas
+   futuras pra desenhar o gráfico de 12h. Trocado pra `forecast_days=2`
+   e a busca do índice inicial passou a localizar a hora atual de
+   verdade no array de timestamps devolvido (que vem no fuso LOCAL da
+   coordenada, `timezone=auto`) usando getters locais do `Date`, em vez
+   de supor que o array começa à meia-noite de hoje.
+3. **Bug real, achado pelo usuário**: clicar em "Fechar" no modal de um
+   pato **não fechava** — `showDuckModal` insere o overlay via
+   `document.body.appendChild`, fora da árvore do `#app`, então o
+   clique nunca borbulhava até o listener delegado em `root`. Corrigido
+   com um `addEventListener` próprio direto no `overlay` (também fecha
+   clicando no fundo escurecido, de brinde).
+4. **Modal de Métodos de volta** (`renderMethodsModal` em `app.js`,
+   botão `.methods-btn` — "?" — embaixo do de Ajustes na cena): a
+   v0.1.9 tinha reduzido a explicação dos 10 métodos a um tooltip
+   `title="..."` sozinho; usuário pediu de volta um jeito de "continuar
+   acessando eles". Os controles de verdade continuam sendo as pílulas
+   inline (não voltou pra tela cheia) — o modal é só a explicação/cheat
+   sheet, reaproveitando `.window-frame`.
+5. **Mascote principal trocado**: o usuário desenhou/forneceu um SVG
+   pixel art original (240x260, contorno + sombreado + piscar via
+   CSS) e pediu pra usar no lugar do design anterior (mais simples,
+   flat). `renderMascotSvg()` em `mascot.js` agora usa essa arte fixa
+   — não parametriza mais cor por `mood` (o humor comunica só pelo
+   texto do badge agora, não pela expressão do rosto). Os patinhos
+   colecionáveis da fazenda **continuam** com o design antigo simples
+   (recolorável por variante) — recolorir esse novo desenho detalhado
+   por raridade seria trabalho grande demais pra esta leva.
+   **Rejeitado nesta mesma leva**: o usuário também ofereceu um arquivo
+   `www/icons/pngaaa.com-296569.svg` (13MB, um `<rect>` por pixel —
+   provavelmente um trace do sprite oficial do Pokémon) como
+   alternativa. Não usado por dois motivos independentes: (a) tamanho
+   tornaria o app visivelmente lento; (b) é um repositório/site
+   **público**, e uma reprodução pixel-a-pixel de personagem
+   registrado da Nintendo carrega risco real de direito autoral mesmo
+   sendo projeto pessoal não-comercial — "não vou vender" não muda o
+   fato de a arte ficar publicamente distribuída. O arquivo continua
+   em `www/icons/` mas não é referenciado em lugar nenhum do código.
+
+Testado via CDP: modal do pato confirmado fechando por botão E por
+clique no fundo; modal de Métodos abre com os 10 métodos e fecha;
+clima confirmado com 12 pontos no gráfico (era 4, dependendo da hora);
+checkbox de tarefa sem regressão de XP duplicado; mascote novo
+renderizando com os elementos de piscar no DOM.
 
 ## Onde ficam as coisas
 

@@ -9,6 +9,7 @@
 
 const root = document.getElementById("app");
 let settingsOpen = false;
+let methodsOpen = false;
 let focusTimer = null; // TimeboxTimer ativo (rodapé da coluna Livros)
 
 // Ícone de engrenagem em pixel art (retângulos, mesma técnica do
@@ -86,6 +87,20 @@ function showDuckModal(duck, { justHatched = false } = {}) {
   `;
   document.body.appendChild(overlay);
   requestAnimationFrame(() => overlay.classList.add("show"));
+
+  // Esse modal fica fora de #app (document.body.appendChild), então o
+  // clique dentro dele nunca borbulha até o listener delegado em
+  // `root` — precisa do seu próprio listener aqui. Clicar no fundo
+  // escurecido também fecha (fora do cartão = "cancelar").
+  function closeThisModal() {
+    overlay.classList.remove("show");
+    setTimeout(() => overlay.remove(), 250);
+  }
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay || e.target.closest('[data-action="close-duck-modal"]')) {
+      closeThisModal();
+    }
+  });
 }
 
 function hashPos(id) {
@@ -122,6 +137,7 @@ async function render() {
           ${ducks.length ? `<span class="scene-duck-count">${ducks.length} pato(s)</span>` : ""}
         </div>
         <button class="settings-btn" data-action="open-settings" aria-label="Ajustes">${pixelGearSvg(18)}</button>
+        <button class="methods-btn" data-action="open-methods" aria-label="Métodos">?</button>
       </section>
 
       <div class="wooden-dashboard">
@@ -136,6 +152,7 @@ async function render() {
     </div>
 
     ${settingsOpen ? await renderSettingsModal() : ""}
+    ${methodsOpen ? renderMethodsModal() : ""}
   `;
 }
 
@@ -528,11 +545,6 @@ const actions = {
     const duck = await window.PsyduckDB.dbGet(window.PsyduckDB.STORES.ducks, el.dataset.id);
     if (duck) showDuckModal(duck, { justHatched: false });
   },
-  "close-duck-modal": (el) => {
-    const overlay = el.closest(".duck-modal-overlay");
-    overlay.classList.remove("show");
-    setTimeout(() => overlay.remove(), 250);
-  },
   async "set-mood"(el) {
     const task = await window.PsyduckDB.dbGet(window.PsyduckDB.STORES.tasks, el.dataset.id);
     if (!task) return;
@@ -546,6 +558,14 @@ const actions = {
   },
   "close-settings"() {
     settingsOpen = false;
+    render();
+  },
+  "open-methods"() {
+    methodsOpen = true;
+    render();
+  },
+  "close-methods"() {
+    methodsOpen = false;
     render();
   },
   async "obsidian-connect"() {
@@ -664,6 +684,38 @@ async function chooseObsidianFile(fileName) {
 }
 
 window.PsyduckApp = { quickAddTask, quickAddBook, saveReflectionNote, forceUpdate, chooseObsidianFile };
+
+// ---------- modal de métodos (cheat sheet — voltou a pedido do usuário) ----------
+// Os controles de verdade (Kanban/Eisenhower/1-3-5/ABCD-Z/2min/80-20)
+// continuam sendo as pílulas inline em cada tarefa (coluna Todos), e o
+// timer de foco fica no rodapé de Livros — este modal é só a
+// explicação de cada método, pra não perder o "cheat sheet" que existia
+// antes da v0.1.9.
+function renderMethodsModal() {
+  return `
+    <div class="modal-overlay show">
+      <div class="window-frame">
+        <div class="window-title-bar">
+          <span>Métodos</span>
+          <button class="window-close-btn" data-action="close-methods">X</button>
+        </div>
+        <div class="window-body">
+          <p class="hint">Nenhum precisa ser seguido à risca. Os controles de cada um ficam nas pílulas da coluna Todos ou no rodapé de Livros (timer de foco).</p>
+          ${window.PsyduckData.METHOD_CONFIGS
+            .map(
+              (m) => `
+            <section class="window-section">
+              <h2>${m.name}</h2>
+              <p class="method-short">${escapeHtml(m.short)}</p>
+              <p class="hint">${escapeHtml(m.explanation)}</p>
+            </section>`
+            )
+            .join("")}
+        </div>
+      </div>
+    </div>
+  `;
+}
 
 // ---------- modal de ajustes (o único modal permitido) ----------
 

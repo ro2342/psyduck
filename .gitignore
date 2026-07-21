@@ -1,3 +1,7 @@
 node_modules/
 .DS_Store
 *.log
+
+# Não usado no código (13MB, trace pixel-a-pixel de arte que pode ser
+# do sprite oficial do Pokémon — não deve entrar num repo público).
+www/icons/pngaaa.com-296569.svg

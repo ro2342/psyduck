@@ -183,7 +183,17 @@ textarea { min-height: 50px; resize: vertical; }
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-6px); }
 }
-.mascot-wrap, .farm-duck { animation-timing-function: steps(1, jump-end); }
+/* Só os patinhos pequenos (design bloqueado simples) usam o "pulo de
+   2 quadros" tipo sprite de jogo — o mascote principal agora tem arte
+   própria com balanço suave (ease-in-out, sem steps), desenhada assim
+   de propósito pelo usuário. */
+.farm-duck { animation-timing-function: steps(1, jump-end); }
+
+.mascot-eye-l, .mascot-eye-r { animation: mascot-blink 4s infinite; transform-origin: center; transform-box: fill-box; }
+@keyframes mascot-blink {
+  0%, 90%, 100% { transform: scaleY(1); }
+  94% { transform: scaleY(0.15); }
+}
 .mascot-proud .mascot-svg { animation: none; }
 
 .farm-duck {
@@ -213,6 +223,24 @@ textarea { min-height: 50px; resize: vertical; }
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.methods-btn {
+  position: absolute;
+  top: 52px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 2px;
+  border: 3px solid var(--border-wood);
+  background: rgba(255,255,255,0.9);
+  cursor: pointer;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-pixel-display);
+  font-size: 0.75rem;
+  color: var(--text-main);
 }
 .window-title-icon { display: flex; align-items: center; gap: 8px; }
 
@@ -522,10 +550,15 @@ textarea { min-height: 50px; resize: vertical; }
 .mood-btn .mood-label { font-size: 0.55rem; font-weight: 700; color: var(--text-soft); }
 .mood-btn.selected { border-color: var(--accent-orange); background: var(--warn-bg); }
 .reflection-note { width: 100%; min-height: 40px; margin-top: 6px; font-size: 0.75rem; }
-.time-audit-mini { display: flex; gap: 4px; margin-top: 4px; }
-.time-audit-mini input { font-size: 0.7rem; padding: 4px 6px; }
-.time-audit-mini input[name="activity"] { flex: 1; }
-.time-audit-mini input[name="minutes"] { width: 50px; }
+/* Empilhado (não em linha) — numa coluna estreita, atividade + minutos
+   + botão lado a lado sempre acabavam cortando o segundo input pra
+   fora da coluna. Cada campo na sua própria linha resolve pra
+   qualquer largura de coluna. */
+.time-audit-mini { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; width: 100%; }
+.time-audit-mini input { font-size: 0.7rem; padding: 4px 6px; width: 100%; box-sizing: border-box; }
+.time-audit-mini .time-audit-row { display: flex; gap: 4px; }
+.time-audit-mini .time-audit-row input[name="minutes"] { width: 56px; flex: 0 0 auto; }
+.time-audit-mini .time-audit-row button { flex: 0 0 auto; }
 
 /* ---------- toast ---------- */
 
