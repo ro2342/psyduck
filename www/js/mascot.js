@@ -278,7 +278,7 @@ function smallLake(cx, cy) {
 // redesenhada a cada clique).
 function renderFarmBackgroundSvg() {
   return `
-  <svg viewBox="0 0 400 225" class="farm-bg theme-day weather-active-clear" preserveAspectRatio="xMidYMax slice" aria-hidden="true" shape-rendering="crispEdges">
+  <svg viewBox="0 0 400 225" class="farm-bg theme-day weather-active-clear" preserveAspectRatio="xMidYMid meet" aria-hidden="true" shape-rendering="crispEdges">
 <!-- Sky Background & Stars -->
                 <rect x="0" y="0" width="400" height="16" class="sky-band sky-band-0"/><rect x="0" y="15" width="400" height="16" class="sky-band sky-band-1"/><rect x="0" y="30" width="400" height="16" class="sky-band sky-band-2"/><rect x="0" y="45" width="400" height="16" class="sky-band sky-band-3"/><rect x="0" y="60" width="400" height="16" class="sky-band sky-band-4"/><rect x="0" y="75" width="400" height="16" class="sky-band sky-band-5"/>
     <g class="celestial-body">
