@@ -278,7 +278,29 @@ function smallLake(cx, cy) {
 // redesenhada a cada clique).
 function renderFarmBackgroundSvg() {
   return `
-  <svg viewBox="0 0 400 225" class="farm-bg theme-day weather-active-clear" preserveAspectRatio="xMidYMid meet" aria-hidden="true" shape-rendering="crispEdges">
+  <svg viewBox="-150 -50 700 325" class="farm-bg theme-day weather-active-clear" preserveAspectRatio="xMidYMid slice" aria-hidden="true" shape-rendering="crispEdges">
+    <!-- Céu e grama "infinitos": estendem pras bordas da tela em
+         qualquer formato de tela (celular estreito, monitor largo),
+         sempre com a MESMA cor das faixas originais (mesmas classes
+         CSS, reage a dia/noite/clima igual) -- assim nunca sobra
+         barra vazia, e a casa/árvores (desenhadas depois, por cima,
+         sempre centralizadas) nunca são cortadas. -->
+    <rect x="-150" y="-50" width="700" height="50" class="sky-band sky-band-0"/>
+    <rect x="-150" y="0" width="150" height="16" class="sky-band sky-band-0"/>
+    <rect x="400" y="0" width="150" height="16" class="sky-band sky-band-0"/>
+    <rect x="-150" y="15" width="150" height="16" class="sky-band sky-band-1"/>
+    <rect x="400" y="15" width="150" height="16" class="sky-band sky-band-1"/>
+    <rect x="-150" y="30" width="150" height="16" class="sky-band sky-band-2"/>
+    <rect x="400" y="30" width="150" height="16" class="sky-band sky-band-2"/>
+    <rect x="-150" y="45" width="150" height="16" class="sky-band sky-band-3"/>
+    <rect x="400" y="45" width="150" height="16" class="sky-band sky-band-3"/>
+    <rect x="-150" y="60" width="150" height="16" class="sky-band sky-band-4"/>
+    <rect x="400" y="60" width="150" height="16" class="sky-band sky-band-4"/>
+    <rect x="-150" y="75" width="150" height="16" class="sky-band sky-band-5"/>
+    <rect x="400" y="75" width="150" height="16" class="sky-band sky-band-5"/>
+    <rect x="-150" y="90" width="150" height="135" class="grass-main"/>
+    <rect x="400" y="90" width="150" height="135" class="grass-main"/>
+    <rect x="-150" y="225" width="700" height="50" class="grass-main"/>
 <!-- Sky Background & Stars -->
                 <rect x="0" y="0" width="400" height="16" class="sky-band sky-band-0"/><rect x="0" y="15" width="400" height="16" class="sky-band sky-band-1"/><rect x="0" y="30" width="400" height="16" class="sky-band sky-band-2"/><rect x="0" y="45" width="400" height="16" class="sky-band sky-band-3"/><rect x="0" y="60" width="400" height="16" class="sky-band sky-band-4"/><rect x="0" y="75" width="400" height="16" class="sky-band sky-band-5"/>
     <g class="celestial-body">

@@ -801,12 +801,34 @@ async function renderObsidianSection() {
   `;
 }
 
+async function renderSyncSection() {
+  const session = await window.PsyduckAuth.getSession();
+  if (!session) {
+    return `
+      <section class="window-section">
+        <h2>Conta Google (sincronização)</h2>
+        <p class="hint">Entre pra sincronizar tarefas, patos, livros e progresso entre aparelhos.</p>
+        <button class="btn btn-primary" onclick="window.PsyduckAuth.startGoogleLogin()">Entrar com Google</button>
+      </section>
+    `;
+  }
+  return `
+    <section class="window-section">
+      <h2>Conta Google (sincronização)</h2>
+      <p>Logado como <strong>${escapeHtml(session.email || session.displayName || session.uid)}</strong>.</p>
+      <button class="btn btn-primary" onclick="window.PsyduckSync.syncAll().then((msg) => { window.flashToast(msg); render(); })">Sincronizar agora</button>
+      <button class="btn" onclick="window.PsyduckAuth.signOut().then(() => render())">Sair</button>
+    </section>
+  `;
+}
+
 async function renderSettingsModal() {
   const db = window.PsyduckDB;
   const profile = (await db.getSetting("profile", null)) || {};
   const wip = (await db.getSetting("kanbanWipLimit", 3)) || 3;
   const notifGranted = "Notification" in window && Notification.permission === "granted";
   const obsidianSection = await renderObsidianSection();
+  const syncSection = await renderSyncSection();
 
   return `
     <div class="modal-overlay show">
@@ -836,6 +858,7 @@ async function renderSettingsModal() {
             </label>
           </section>
           ${obsidianSection}
+          ${syncSection}
           <section class="window-section">
             <h2>Lembretes</h2>
             <p>${notifGranted ? "Permissão concedida." : "Sem permissão ainda."}</p>

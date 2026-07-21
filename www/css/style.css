@@ -130,21 +130,18 @@ textarea { min-height: 50px; resize: vertical; }
 
 /* ---------- cena/mascote (topo, ~42vh) ---------- */
 
-/* A cena é desenhada num viewBox 16:9 (0 0 400 225). Antes, o
-   contêiner tinha uma altura fixa (42vh) sem respeitar essa proporção
-   e o SVG usava preserveAspectRatio="...slice" (igual "background-size:
-   cover" do CSS) -- em celular, mais alto/estreito que 16:9, isso
-   cortava as bordas da ilustração pra preencher o espaço. Agora o
-   contêiner usa aspect-ratio pra sempre bater com o formato da cena
-   (sem cortar nada), com um teto de altura pra não ficar gigante em
-   monitor largo e baixo. */
+/* O SVG da cena (mascot.js) tem céu/grama "infinitos" nas bordas do
+   próprio viewBox (mesma cor das faixas reais, sempre reagindo a
+   dia/noite/clima) -- por isso pode preencher qualquer formato de
+   tela (preserveAspectRatio="...slice") sem nunca cortar a casa/
+   árvores/lago, que ficam sempre centralizados, e sem sobrar barra
+   vazia em formato de tela nenhum. */
 .scene-container {
   position: relative;
   overflow: hidden;
   width: 100%;
-  aspect-ratio: 16 / 9;
-  max-height: 45vh;
-  flex: 0 0 auto;
+  height: 40vh;
+  flex: 0 0 40vh;
   border-bottom: 4px solid var(--scene-lake-edge);
 }
 .farm-bg { position: absolute; inset: 0; width: 100%; height: 100%; }

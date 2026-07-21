@@ -27,6 +27,17 @@ jobs:
       - name: Checkout do repositório
         uses: actions/checkout@v4
 
+      - name: Injetar o Client Secret do Google (só no artefato publicado, nunca no git)
+        shell: bash
+        env:
+          GOOGLE_OAUTH_WEB_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_WEB_CLIENT_SECRET }}
+        run: |
+          if [ -z "$GOOGLE_OAUTH_WEB_CLIENT_SECRET" ]; then
+            echo "::error::Secret GOOGLE_OAUTH_WEB_CLIENT_SECRET não configurado (Settings > Secrets and variables > Actions)."
+            exit 1
+          fi
+          sed -i "s/__GOOGLE_OAUTH_WEB_CLIENT_SECRET__/$GOOGLE_OAUTH_WEB_CLIENT_SECRET/" www/js/auth.js
+
       - name: Configurar o GitHub Pages
         uses: actions/configure-pages@v5
 

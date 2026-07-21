@@ -30,12 +30,13 @@ acompanhado até o fim.
   JS sem build, não Next.js). Só implementar algo de lá se o usuário
   pedir explicitamente aquele item específico.
 
-## Estado atual (v0.1.12)
+## Estado atual (v0.1.14)
 
-Só existe o PWA (`www/`), rodando 100% local — **sem sync com nuvem,
-sem app nativo ainda** (Obsidian/clima/livros já existem, mas Google
-Tasks/Calendar/Bring! e o app UWP continuam no roadmap). Ver roadmap
-completo abaixo.
+PWA (`www/`) com a infraestrutura de sync na nuvem **construída e
+com o fluxo de OAuth confirmado batendo no Google de verdade**, mas
+**ainda não utilizável de ponta a ponta** — falta um passo manual no
+Google Cloud Console (ver v0.1.14 abaixo). App nativo UWP continua no
+roadmap. Ver roadmap completo abaixo.
 
 ## Arquitetura de tela única (desde a v0.1.9 — LEIA ANTES DE MEXER NA UI)
 
@@ -487,6 +488,66 @@ sistema (`theme-night` no teste, rodado à noite); tarefas concluídas
 aparecendo dentro do `<details>`; modal do pato fechando (com espera
 maior — o teste anterior deu falso negativo por timing, não por bug).
 
+**v0.1.13 (correção rápida de enquadramento da cena)**: usuário reportou
+que a ilustração da fazenda cortava casa/lago nas bordas em celular
+estreito. Fix interino: `aspect-ratio: 16/9` em `.scene-container` +
+`preserveAspectRatio="xMidYMid meet"` no SVG — parou de cortar, mas
+"encolheu" a cena (barras vazias em cima/embaixo em telas fora do
+16:9). Substituído no v0.1.14 abaixo por uma solução melhor.
+
+**v0.1.14 (cena de ponta a ponta + infraestrutura de sync com Google)**:
+1. **Cena com "borda infinita" de céu/grama**: em vez de encolher a
+   ilustração pra caber sem cortar (v0.1.13), o viewBox do SVG em
+   `renderFarmBackgroundSvg()` (`mascot.js`) foi estendido de `0 0 400
+   225` pra `-150 -50 700 325`, com faixas extras de céu (`sky-band-*`)
+   e grama (`grass-main`) preenchendo essa borda nova, usando as MESMAS
+   classes de tema/clima da cena principal (blend automático de cor).
+   `.scene-container` voltou a ser `height: 40vh` fixo (sem
+   `aspect-ratio`) com `preserveAspectRatio="xMidYMid slice"` (cover).
+   Resultado: a cena preenche o container de ponta a ponta em qualquer
+   proporção de tela, e um corte agora só come a borda estendida de cor
+   sólida — casa/horta/cachorro/lago (o conteúdo detalhado, no centro
+   do viewBox original) nunca são cortados. Confirmado por screenshot
+   em viewport de celular (390×844).
+2. **Infraestrutura de login Google + sync Firestore (v0.2.0 adiantada
+   parcialmente)**: `www/js/auth.js` (novo) — PKCE Authorization Code
+   flow, mesmo padrão do `theartistsway/www/js/auth.js`. `www/js/sync.js`
+   (novo) — sync REST direto com Firestore (sem SDK), `mergePerRecord`
+   pra `tasks/projects/timeAuditLog/ducks/books` e `mergeWholeBlob` pra
+   `profile/gamification`, debounce de 5s + sync ao focar a aba/logar.
+   `db.js` ganhou `getSettingRaw`/`setSettingRaw` (expõe `updatedAt` cru,
+   necessário pro merge de blob inteiro). Seção "Conta Google" nova em
+   Ajustes (entrar/sincronizar agora/sair). Client Secret do Google
+   nunca commitado em texto puro — fica como placeholder
+   `__GOOGLE_OAUTH_WEB_CLIENT_SECRET__` em `auth.js`, substituído só no
+   artefato publicado pelo `deploy-pages.yml` via secret do repositório
+   (`GOOGLE_OAUTH_WEB_CLIENT_SECRET`, já configurado no GitHub).
+   Projeto Firebase: `psyduck-42`.
+   - **Testado via CDP o que dava pra testar sem login real**: os dois
+     namespaces (`PsyduckAuth`/`PsyduckSync`) carregam sem erro de
+     console, o botão "Entrar com Google" aparece em Ajustes quando
+     deslogado, e clicar nele de fato monta e navega pra uma URL válida
+     de consentimento do Google (`accounts.google.com/o/oauth2/v2/auth`)
+     com o `client_id` certo, PKCE `code_challenge` e `state` corretos.
+   - **Achado real do teste**: o Google recusou com
+     `redirect_uri_mismatch` — **o redirect URI usado pelo app
+     (`https://ro2342.github.io/psyduck/`, e qualquer outro que for
+     testado, como `http://localhost:PORTA/index.html`) precisa ser
+     cadastrado manualmente em "Authorized redirect URIs" do OAuth
+     client no Google Cloud Console antes do login funcionar de
+     ponta a ponta.** Isso é passo do usuário, não dá pra automatizar.
+   - **Não testável via automação**: o resto do fluxo (troca de code
+     por token, `signInWithIdp` no Firebase, merge de verdade contra
+     Firestore) só é verificável com uma conta Google real completando
+     o consentimento — pendente de teste manual do usuário.
+   - **Ainda pendente antes de considerar v0.2.0 "pronta"**: travar as
+     regras de segurança do Firestore (hoje em "modo de teste", aberto)
+     pra regra por-`uid` de verdade — ver `setup-google-cloud.md`.
+
+**Ainda pendente** (de sessões anteriores, não fez parte desta leva):
+acesso funcional de verdade aos métodos (Kanban de verdade, matriz de
+Eisenhower de verdade, não só pílulas/modal explicativo).
+
 ## Onde ficam as coisas
 
 ```
@@ -503,6 +564,8 @@ www/
     ├── notifications.js ← Notification API best-effort (limitação documentada no README)
     ├── weather.js      ← card de clima (geolocalização + Open-Meteo, cache 30min)
     ├── obsidian.js     ← ponte com cofre local via File System Access API (só desktop Chrome/Edge)
+    ├── auth.js         ← login Google via PKCE + troca de token com o Firebase (Identity Toolkit)
+    ├── sync.js         ← sync REST direto com Firestore (mergePerRecord/mergeWholeBlob), sem SDK
     └── theme.js        ← tema claro/escuro/automático + accent color via CSS custom properties
 ```
 
@@ -567,14 +630,15 @@ Raridade não é um campo próprio — vem sempre de `duckVariant(variantId).rar
 
 ## Roadmap (não implementado ainda, na ordem)
 
-- **v0.2.0** — Firestore sync + login Google (PKCE no PWA — igual
-  `theartistsway/www/js/auth.js`/`sync.js`, adaptado pros stores daqui).
-  Precisa de projeto GCP/Firebase **próprio do psyduck** (não reusa o
-  do theartistsway) — checklist a escrever em `setup-google-cloud.md`
-  quando chegar a vez, no mesmo formato de
-  `theartistsway/sincronizacao-nuvem-setup.md`. `mergePerRecord`
-  precisa comparar `deleted` além de `updatedAt` (diferença importante
-  em relação ao theartistsway).
+- **v0.2.0** — Firestore sync + login Google: **código escrito na
+  v0.1.14** (`auth.js`/`sync.js`), fluxo PKCE confirmado batendo no
+  Google de verdade via CDP. Falta: (1) cadastrar o redirect URI real
+  em "Authorized redirect URIs" no Google Cloud Console (bloqueia o
+  login completar — ver entrada v0.1.14 acima), (2) teste manual do
+  usuário completando o consentimento de verdade, (3) travar as regras
+  de segurança do Firestore (hoje em modo de teste). `mergePerRecord`
+  já compara `deleted` além de `updatedAt` (diferença em relação ao
+  theartistsway, que não tem exclusão real em nenhum store).
 - **v0.3.0** — App UWP nativo (`uwp/PsyduckUWP/`) pra Windows 10 Mobile
   + Windows 11, clonando 1:1 o padrão de `theartistsway/uwp/ArtistWayUWP`:
   `LocalDataStore`, `SyncService`, `AuthService` (Device Grant +

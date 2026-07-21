@@ -203,6 +203,19 @@ async function setSetting(key, value) {
   notifyChange();
 }
 
+// Versões "cruas" (com o timestamp da linha, não só o valor) — usadas
+// só pelo sync.js pra decidir qual lado é mais recente num merge de
+// blob inteiro (ex.: profile). O resto do app usa getSetting/setSetting
+// normalmente.
+async function getSettingRaw(key) {
+  return dbGet(STORES.profile, key);
+}
+
+async function setSettingRaw(key, value, updatedAt) {
+  await dbPut(STORES.profile, { key, value, updatedAt: updatedAt || new Date().toISOString() });
+  notifyChange();
+}
+
 // ---------- gamificação ----------
 
 async function getGamificationState() {
@@ -297,6 +310,8 @@ window.PsyduckDB = {
   addTimeAuditEntry,
   getSetting,
   setSetting,
+  getSettingRaw,
+  setSettingRaw,
   getGamificationState,
   saveGamificationState,
   listDucks,
