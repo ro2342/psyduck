@@ -544,6 +544,61 @@ estreito. Fix interino: `aspect-ratio: 16/9` em `.scene-container` +
      regras de segurança do Firestore (hoje em "modo de teste", aberto)
      pra regra por-`uid` de verdade — ver `setup-google-cloud.md`.
 
+**v0.1.15 (bug real: árvore colidindo com o prédio de fundo + erro de
+login agora aparece na tela)**:
+1. **Cena "não parecia com o original"**: o usuário reclamou que a cena
+   não tinha "as montanhas, as estrelinhas, o jeito da graminha, as
+   cores" do arquivo original. Investigado a fundo (comparação lado a
+   lado via CDP entre o arquivo original e o app, incluindo uma
+   renderização SEM nenhum corte de container pra ver a cena inteira):
+   **mountain-bg, treeline, stars-layer e as cores de tema estavam
+   todos presentes e corretos** (confirmado por diff de CSS
+   character-a-character contra o arquivo original — zero diferença
+   nas variáveis de cor de dia/noite/pôr-do-sol/nascer-do-sol). O bug
+   real era outro: `roundTree(96, 96, 0.8)` (uma árvore nossa, extra)
+   ficava exatamente em cima da borda esquerda do `city-center` (o
+   "prédio de fundo com janelas" que já vem no arquivo original do
+   usuário, um group `<g class="city-center">` com ~40 elementos,
+   posicionado em x=111–291) — essa árvore criava uma mancha verde
+   emendando o prédio original com a nossa casinha (`smallHouse`),
+   fazendo a cena parecer "errada"/borrada e sem noção de profundidade,
+   mesmo com todo o resto (montanha/estrela/grama/cor) tecnicamente
+   certo. **Corrigido removendo essa árvore extra** (o cenário original
+   já tem suas próprias 4 árvores flanqueando o prédio — a nossa era
+   redundante e mal posicionada). `smallHouse` continua em `(10, 100)`
+   — não precisou mover, ela nunca colidia de verdade com o
+   `city-center` (só a árvore fazia ponte entre os dois). Confirmado
+   via CDP/screenshot em desktop largo, mobile (390×844) e nos temas
+   dia/noite: casa e prédio agora com respiro visual claro entre eles,
+   estrelas visíveis à noite, sem regressão de corte nas bordas.
+   - **Armadilha de teste encontrada nesta leva**: o Chrome headless
+     com `--user-data-dir` persistente cacheava a página de teste entre
+     navegações mesmo com o app usando cache-buster `?v=Date.now()` —
+     o cache-buster protege os arquivos carregados PELO app (JS/CSS),
+     mas não uma URL de teste fixa que eu mesmo naveguei duas vezes.
+     Corrigido adicionando um `?t=timestamp` na própria URL de
+     navegação de cada teste, não só nos assets internos.
+2. **Login com Google "não dava erro, mas também não logava"**: o
+   usuário confirmou que o "Authorized redirect URI" já está cadastrado
+   certinho no Google Cloud Console
+   (`https://ro2342.github.io/psyduck/`). Causa mais provável: erros de
+   login (`?error=...` do Google, state/verifier perdido, falha na
+   troca de token) só iam pro `console.warn` — invisíveis pra quem não
+   está com o DevTools aberto, então "sem erro visível" não significa
+   "sem erro". `auth.js` agora chama `window.flashToast(...)` (o toast
+   já usado no resto do app) em cada um desses casos, mais um toast de
+   sucesso ("Login com Google concluído!") e uma chamada a `render()`
+   direto quando o login fecha — antes disso, mesmo um login
+   bem-sucedido só atualizava a UI a próxima vez que o modal de Ajustes
+   fosse reaberto. **Suspeita mais provável do problema de fundo**
+   (ainda não confirmada, precisa que o usuário olhe): o cliente OAuth
+   é novo (criado 21/07/2026) — se a tela de consentimento OAuth do
+   projeto ainda estiver em modo "Testing" no Google Cloud Console, só
+   contas cadastradas como "Test user" conseguem completar o login; as
+   outras são barradas pelo próprio Google (o que agora aparece como
+   toast de erro, em vez de sumir em silêncio). Avisar o usuário pra
+   checar isso e testar de novo.
+
 **Ainda pendente** (de sessões anteriores, não fez parte desta leva):
 acesso funcional de verdade aos métodos (Kanban de verdade, matriz de
 Eisenhower de verdade, não só pílulas/modal explicativo).

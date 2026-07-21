@@ -104,10 +104,12 @@ async function handleRedirectIfNeeded() {
 
   if (params.get("error")) {
     console.warn("Login com Google cancelado/erro:", params.get("error"));
+    if (window.flashToast) window.flashToast("Login com Google cancelado: " + params.get("error"));
     return;
   }
   if (!verifier || state !== expectedState) {
     console.warn("Login com Google: state inválido ou verifier perdido.");
+    if (window.flashToast) window.flashToast("Login com Google falhou (sessão perdida). Tente de novo.");
     return;
   }
 
@@ -126,13 +128,23 @@ async function handleRedirectIfNeeded() {
   const tokenJson = await tokenResponse.json();
   if (!tokenResponse.ok) {
     console.warn("Falha ao trocar o code do Google:", tokenJson);
+    if (window.flashToast) window.flashToast("Falha no login com o Google: " + (tokenJson.error_description || tokenJson.error || "erro desconhecido"));
     return;
   }
 
   const token = tokenJson.id_token || tokenJson.access_token;
   const tokenParamName = tokenJson.id_token ? "id_token" : "access_token";
-  const session = await exchangeWithFirebase(token, tokenParamName);
+  let session;
+  try {
+    session = await exchangeWithFirebase(token, tokenParamName);
+  } catch (err) {
+    console.warn("Falha ao trocar o token com o Firebase:", err);
+    if (window.flashToast) window.flashToast("Falha no login: " + err.message);
+    return;
+  }
   await window.PsyduckDB.setSetting("session", session);
+  if (window.flashToast) window.flashToast("Login com Google concluído!");
+  if (window.render) window.render();
   if (window.PsyduckSync) window.PsyduckSync.syncAll();
 }
 

@@ -1,7 +1,7 @@
 // data.js — fonte única de texto de interface e configuração dos métodos.
 // Nada de lógica aqui, só dados (mesmo papel do data.js do theartistsway).
 
-const APP_VERSION = "0.1.14";
+const APP_VERSION = "0.1.15";
 
 const UI_STRINGS = {
   appName: "Psyduck",
