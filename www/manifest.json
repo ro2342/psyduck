@@ -1,0 +1,15 @@
+{
+  "name": "Psyduck — Gerenciador de Tarefas",
+  "short_name": "Psyduck",
+  "description": "Gerenciador de tarefas pensado para TDAH, autismo e afantasia: métodos de produtividade de verdade, gamificação e um pato confuso torcendo por você.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fff8ec",
+  "theme_color": "#f6a821",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "./icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "./icons/icon-maskable.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

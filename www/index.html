@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="auto">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Psyduck — Gerenciador de Tarefas</title>
+<meta name="description" content="Gerenciador de tarefas para TDAH, autismo e afantasia." />
+<meta name="theme-color" content="#f6a821" />
+<link rel="manifest" href="./manifest.json" />
+<link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="./icons/icon.svg" />
+<link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+  <div id="app"></div>
+
+  <script>
+    // Cache-buster simples: cada carregamento usa a versão do build atual,
+    // guardada em www/js/data.js (APP_VERSION), pra evitar servir JS velho
+    // de um cache de navegador antigo depois de um deploy.
+    const V = Date.now();
+    const scripts = [
+      "js/data.js",
+      "js/db.js",
+      "js/gamification.js",
+      "js/mascot.js",
+      "js/theme.js",
+      "js/notifications.js",
+      "js/methods.js",
+      "js/app.js",
+    ];
+    scripts.forEach((src) => document.write(`<script src="${src}?v=${V}"><\/script>`));
+  </script>
+</body>
+</html>
