@@ -20,14 +20,20 @@ function parseHash() {
 async function render() {
   const { path, query } = parseHash();
   const handler = routes[path] || routes["/home"];
-  const content = await handler(query);
-  root.innerHTML = shell(path, content);
+  const result = await handler(query);
+  // Uma tela pode devolver só um HTML (a maioria) ou { scene, body } quando
+  // tem cena ilustrada de ponta a ponta (Início/Fazenda) — a cena vira
+  // irmã de .content, fora do container de largura máxima, pra ocupar a
+  // tela inteira em vez de ficar presa numa caixinha no meio.
+  const scene = typeof result === "object" && result.scene ? result.scene : "";
+  const body = typeof result === "object" ? result.body : result;
+  root.innerHTML = shell(path, body, scene);
   window.scrollTo(0, 0);
 }
 
 const BOTTOM_NAV_ICONS = { "/home": "🏠", "/tasks": "📋", "/farm": "🦆", "/methods": "🧭", "/settings": "⚙️" };
 
-function shell(activePath, content) {
+function shell(activePath, content, scene) {
   const S = window.PsyduckData.UI_STRINGS;
   const nav = [
     ["/home", S.nav.home],
@@ -43,7 +49,10 @@ function shell(activePath, content) {
   const bottomNavActive = nav.some(([path]) => path === activePath) ? activePath : null;
 
   return `
-    <main class="content">${content}</main>
+    <main class="page">
+      ${scene || ""}
+      <div class="content">${content}</div>
+    </main>
     <nav class="bottom-nav">
       ${nav
         .map(
@@ -259,15 +268,18 @@ route("/home", async () => {
   const today = todayKey();
   const otfToday = tasks.filter((t) => t.oneThreeFiveDate === today);
 
-  return `
+  const scene = `
     <section class="scene-hero">
       ${window.PsyduckMascot.renderFarmBackgroundSvg()}
       <div class="scene-foreground">
         <div class="mascot-wrap">${window.PsyduckMascot.renderMascotSvg(mood)}</div>
         ${ducks.length ? `<a href="#/farm" class="scene-duck-count">🦆 +${ducks.length} na fazenda</a>` : ""}
       </div>
-      <p class="mascot-caption">${window.PsyduckMascot.MOOD_LABELS[mood]}</p>
     </section>
+  `;
+
+  const body = `
+    <p class="mascot-caption">${window.PsyduckMascot.MOOD_LABELS[mood]}</p>
 
     <section class="stat-row">
       <div class="stat-card">
@@ -300,6 +312,8 @@ route("/home", async () => {
       <a class="btn btn-primary btn-block" href="#/tasks">+ Nova tarefa rápida</a>
     </section>
   `;
+
+  return { scene, body };
 });
 
 function taskRow(t) {
@@ -337,9 +351,7 @@ route("/farm", async () => {
     return { left: 8 + (h % 84), top: 48 + ((h >> 8) % 42), delay: (h % 30) / 10 };
   }
 
-  return `
-    <h1>Fazenda dos Psyducks</h1>
-    <p class="hint">Cada tarefa concluída tem uma chance de chocar um novo Psyduck. Subir de nível garante um.</p>
+  const scene = `
     <section class="farm-scene-wrap">
       ${window.PsyduckMascot.renderFarmBackgroundSvg()}
       <div class="farm-ducks">
@@ -355,6 +367,11 @@ route("/farm", async () => {
         }
       </div>
     </section>
+  `;
+
+  const body = `
+    <h1>Fazenda dos Psyducks</h1>
+    <p class="hint">Cada tarefa concluída tem uma chance de chocar um novo Psyduck. Subir de nível garante um.</p>
     <section class="panel">
       <h2>Família (${ducks.length})</h2>
       ${ducks
@@ -373,6 +390,8 @@ route("/farm", async () => {
         .join("") || `<p class="empty">Vazio por enquanto.</p>`}
     </section>
   `;
+
+  return { scene, body };
 });
 
 route("/tasks", async (query) => {

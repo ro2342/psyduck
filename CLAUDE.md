@@ -48,6 +48,29 @@ autocuidado) e *Habitica* (RPG com pets como recompensa) — cena
 ilustrada ocupando espaço real, barra inferior, nada de grid de cards
 cinza. Evitar voltar pro padrão "dashboard SaaS".
 
+**v0.1.2 (feedback imediato sobre a v0.1.1)**: o usuário achou a cena
+ainda "presa numa caixinha no meio da tela" e mandou uma referência
+(vibecoded também) com a fazenda ocupando a largura inteira da tela,
+de ponta a ponta, com painéis estilo quadro de avisos/cortiça embaixo.
+Mudanças:
+- **Cena de ponta a ponta**: `route()` agora pode devolver `{ scene,
+  body }` em vez de só uma string — `render()`/`shell()` (`app.js`)
+  colocam `scene` como irmã de `.content`, fora do container de
+  largura máxima (720px), então ocupa 100% da tela. Só `/home` e
+  `/farm` usam isso; as outras telas continuam devolvendo string pura
+  (sem cena). `.scene-hero`/`.farm-scene-wrap` perderam
+  border-radius/box-shadow/margem — viram viewport de ponta a ponta
+  com uma borda clara embaixo simulando a margem do lago.
+- **Painéis viram "notas de cortiça"**: `.panel` ganhou leve rotação
+  alternada (ímpar/par) + um "pino" circular no topo (`::before`),
+  em vez de card branco reto flutuando num fundo cinza. Fundo da
+  página (`--bg`) mudou de creme liso pra um tom de madeira/cortiça,
+  os painéis (`--bg-elevated`) continuam claros — o contraste entre
+  os dois é o que dá a leitura de "nota pregada num quadro".
+- Formulários dentro de `<details class="panel">` (o form de nova
+  tarefa) **não** ganham pino/rotação — regra: só listas/conteúdo
+  "vivo" parecem nota pregada, formulário continua neutro.
+
 ## Onde ficam as coisas
 
 ```

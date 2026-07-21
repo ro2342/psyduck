@@ -3,11 +3,11 @@
 
 :root {
   --accent-color: #f6a821;
-  --bg: #fff8ec;
-  --bg-elevated: #ffffff;
+  --bg: #e7cf9a;
+  --bg-elevated: #fffdf7;
   --text: #2c2116;
-  --text-soft: #7a6a52;
-  --border: #f0e0bf;
+  --text-soft: #6b5a3e;
+  --border: #d9bd82;
   --warn-bg: #ffe4d6;
   --warn-text: #a63d1d;
   --radius: 20px;
@@ -27,11 +27,11 @@
 }
 
 :root[data-theme="dark"] {
-  --bg: #1c1712;
-  --bg-elevated: #2a2219;
+  --bg: #241a10;
+  --bg-elevated: #322820;
   --text: #f5ecd9;
   --text-soft: #c9b891;
-  --border: #3c3225;
+  --border: #453521;
   --warn-bg: #4a2416;
   --warn-text: #ffb08a;
   --shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
@@ -67,6 +67,8 @@ button, input, select, textarea {
 }
 
 /* ---------- shell ---------- */
+
+.page { display: block; }
 
 .content {
   max-width: 720px;
@@ -119,15 +121,39 @@ h2 { font-size: 1.05rem; margin: 0 0 10px; }
 
 /* ---------- painéis genéricos ---------- */
 
+/* Painéis viram "notas presas no quadro de cortiça" — leve rotação
+   alternada + um pino no topo, em vez de card branco flutuando num
+   fundo cinza liso (referência: quadro de avisos de fazenda). */
 .panel {
+  position: relative;
   background: var(--bg-elevated);
-  border-radius: var(--radius);
-  padding: 18px;
-  margin-bottom: 16px;
+  border-radius: 14px;
+  padding: 22px 18px 18px;
+  margin-bottom: 18px;
   box-shadow: var(--shadow);
+  transform: rotate(var(--tilt, -0.6deg));
+}
+.panel:nth-of-type(even) { --tilt: 0.6deg; }
+.panel::before {
+  content: "";
+  position: absolute;
+  top: -7px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ff8a7a, #c23b2a);
+  box-shadow: 0 2px 3px rgba(0,0,0,0.3);
 }
 .panel-warn { background: var(--warn-bg); color: var(--warn-text); }
 .panel-warn .task-title { color: var(--warn-text); }
+.panel-warn::before { background: radial-gradient(circle at 35% 35%, #ffd23f, #c9660a); }
+
+/* Elementos utilitários (formulário dentro de <details>, cabeçalhos)
+   não devem parecer nota pregada — sem pino/rotação. */
+details.panel { transform: none; }
+details.panel::before { display: none; }
 
 .stack { display: flex; flex-direction: column; gap: 10px; }
 .field { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; color: var(--text-soft); }
@@ -162,11 +188,12 @@ textarea { min-height: 60px; resize: vertical; }
 
 .scene-hero {
   position: relative;
-  border-radius: var(--radius);
   overflow: hidden;
-  height: 220px;
-  margin-bottom: 16px;
-  box-shadow: var(--shadow);
+  width: 100%;
+  height: 44vh;
+  min-height: 220px;
+  max-height: 340px;
+  border-bottom: 4px solid var(--scene-lake-edge);
 }
 .farm-bg {
   position: absolute;
@@ -180,27 +207,26 @@ textarea { min-height: 60px; resize: vertical; }
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  padding-bottom: 6px;
+  padding-bottom: 8%;
 }
-.mascot-wrap { max-width: 190px; width: 60%; animation: bob 3.5s ease-in-out infinite; filter: drop-shadow(0 8px 10px rgba(0,0,0,0.15)); }
+.mascot-wrap { max-width: 220px; width: 42%; animation: bob 3.5s ease-in-out infinite; filter: drop-shadow(0 8px 10px rgba(0,0,0,0.2)); }
 .mascot-svg { width: 100%; height: auto; }
 .mascot-caption {
-  position: relative;
   text-align: center;
   color: var(--text-soft);
   font-weight: 700;
-  margin: 8px 0 16px;
+  margin: 14px 0 16px;
 }
 .scene-duck-count {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  background: rgba(255,255,255,0.85);
+  top: 14px;
+  right: 14px;
+  background: rgba(255,255,255,0.9);
   color: #2c2116;
   font-weight: 700;
-  font-size: 0.75rem;
-  padding: 5px 10px;
-  border-radius: 12px;
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  border-radius: 14px;
   text-decoration: none;
   box-shadow: var(--shadow);
 }
@@ -215,11 +241,12 @@ textarea { min-height: 60px; resize: vertical; }
 
 .farm-scene-wrap {
   position: relative;
-  height: 320px;
-  border-radius: var(--radius);
+  width: 100%;
+  height: 50vh;
+  min-height: 260px;
+  max-height: 420px;
   overflow: hidden;
-  box-shadow: var(--shadow);
-  margin-bottom: 16px;
+  border-bottom: 4px solid var(--scene-lake-edge);
 }
 .farm-ducks { position: absolute; inset: 0; }
 .farm-duck {

@@ -1,6 +1,6 @@
 {
   "name": "psyduck",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Gerenciador de tarefas para TDAH, autismo e afantasia — PWA sem build.",
   "private": true,
   "scripts": {
