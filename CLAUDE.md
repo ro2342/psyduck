@@ -649,6 +649,32 @@ login agora aparece na tela)**:
    de suporte → Salvar. Não dá pra confirmar de dentro do código se
    isso resolve — pedir pro usuário testar de novo depois desse passo.
 
+**v0.1.17 (reversão explícita: usuário confirmou que quer o
+`cenario_pixel_art_16bit-v2.html` por inteiro, prédio incluído)**:
+depois da v0.1.16, perguntei se "eu quero o do cenario_pixel_art_16bit-v2.html
+mesmo" significava só o céu/estrelas/clima (mantendo o prédio escondido
+e a horta nova) ou tudo — o usuário escolheu **tudo, incluindo o
+prédio de fundo**, mesmo depois de eu explicitar que o prédio tem a
+placa "PC" e o logo da Pokébola. Decisão dele, é projeto pessoal não
+comercial, mesma lógica já aceita antes pro pato pngaaa.com (a
+diferença é que aqui não tem o motivo técnico independente — o prédio
+é só ~40 rects, não pesa nada). Revertido:
+- `.farm-bg .city-center { display: none; }` removida do `style.css`
+  — o prédio (placa "PC" + Pokébola) volta a aparecer.
+- `smallGarden()` (`mascot.js`) voltou a ser a versão de vaso único
+  (a versão de canteiro com fileiras de hortaliça da v0.1.16, inspirada
+  no `fazenda_pixel_art_16bit.html`, foi desfeita — esse arquivo não é
+  mais usado como referência nenhuma). Variáveis `--scene-crop-red/
+  green/yellow` removidas de `style.css` por ficarem sem uso.
+- Resultado: a cena volta a ser 100% baseada em
+  `cenario_pixel_art_16bit-v2.html` (mesma decisão de fundo desde a
+  v0.1.12), sem nada emprestado do `fazenda_pixel_art_16bit.html`.
+- Login: o usuário confirmou que já habilitou o provedor Google no
+  Firebase Authentication do projeto (o passo pedido na v0.1.16) — não
+  testado de ponta a ponta ainda (precisa de login real, não dá pra
+  automatizar), mas o erro anterior (`CONFIGURATION_NOT_FOUND`) deve
+  estar resolvido agora.
+
 **Ainda pendente** (de sessões anteriores, não fez parte desta leva):
 acesso funcional de verdade aos métodos (Kanban de verdade, matriz de
 Eisenhower de verdade, não só pílulas/modal explicativo).

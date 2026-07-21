@@ -44,9 +44,6 @@
   --scene-soil-frame: #7a5230;
   --scene-soil: #5c3d22;
   --scene-pot: #a85c3a;
-  --scene-crop-red: #e0473a;
-  --scene-crop-green: #6fd88f;
-  --scene-crop-yellow: #f0c419;
   --scene-dog: #c98a4f;
   --scene-dog-dark: #a86a35;
   font-size: 16px;
@@ -148,11 +145,6 @@ textarea { min-height: 50px; resize: vertical; }
   border-bottom: 4px solid var(--scene-lake-edge);
 }
 .farm-bg { position: absolute; inset: 0; width: 100%; height: 100%; }
-/* O cenário original (cenario_pixel_art_16bit-v2.html) tem um prédio de
-   fundo com placa "PC" + logo de Pokébola (era um mock genérico de
-   demonstração do arquivo). Escondido: não combina com a fazenda do
-   Psyduck e evita reproduzir marca registrada de terceiro na tela. */
-.farm-bg .city-center { display: none; }
 .scene-foreground {
   position: absolute;
   inset: 0;
