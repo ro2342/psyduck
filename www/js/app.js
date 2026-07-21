@@ -111,6 +111,23 @@ function hashPos(id) {
 
 // ---------- render principal ----------
 
+// A cena de fundo (mascot.js) tem quase 800 elementos (céu/montanhas/
+// cidade/clima) — pesado demais pra desenhar de novo a cada clique de
+// tarefa. Ela é montada UMA VEZ (`sceneShellBuilt`) e só tem sua classe
+// de tema/clima atualizada depois disso; só o resto (dashboard, patos,
+// mascote, modais) é redesenhado a cada `render()`, que continua
+// rodando toda hora que algo muda (mesmo padrão de sempre).
+let sceneShellBuilt = false;
+
+function updateSceneThemeClasses() {
+  const bg = document.querySelector(".farm-bg");
+  if (!bg) return;
+  bg.classList.remove("theme-day", "theme-sunset", "theme-night", "theme-sunrise");
+  bg.classList.remove("weather-active-clear", "weather-active-rain", "weather-active-storm", "weather-active-snow");
+  bg.classList.add(window.PsyduckWeather.getSceneTimeClass());
+  bg.classList.add(window.PsyduckWeather.getSceneWeatherClass());
+}
+
 async function render() {
   const db = window.PsyduckDB;
   const tasks = await db.listTasks();
@@ -123,34 +140,50 @@ async function render() {
   const featured = await pickFeaturedTask(tasks, today);
   const mood = window.PsyduckMascot.moodFor({ overdueCount: overdue.length, streak: state.streak, justLeveledUp: false });
 
-  root.innerHTML = `
-    <div class="app-shell">
-      <section class="scene-container">
-        ${window.PsyduckMascot.renderFarmBackgroundSvg()}
-        <div class="scene-foreground">
-          <div class="mascot-wrap">${window.PsyduckMascot.renderMascotSvg(mood)}</div>
-          ${ducks.map((d) => {
-            const pos = hashPos(d.id);
-            return `<button class="farm-duck" data-action="show-duck" data-id="${d.id}" style="left:${pos.left}%; top:${pos.top}%; animation-delay:${pos.delay}s;">${window.PsyduckMascot.renderDuckIcon(d.variantId, { size: 46 })}</button>`;
-          }).join("")}
-          <span class="scene-mood-badge">${window.PsyduckMascot.MOOD_LABELS[mood]}</span>
-          ${ducks.length ? `<span class="scene-duck-count">${ducks.length} pato(s)</span>` : ""}
-        </div>
-        <button class="settings-btn" data-action="open-settings" aria-label="Ajustes">${pixelGearSvg(18)}</button>
-        <button class="methods-btn" data-action="open-methods" aria-label="Métodos">?</button>
-      </section>
-
-      <div class="wooden-dashboard">
-        ${await renderMoedasColumn(state)}
-        ${renderLembretesColumn(pending)}
-        ${renderTarefasColumn(pending)}
-        ${renderFazendaColumn(ducks)}
-        ${renderLivrosColumn(books)}
-        ${await window.PsyduckWeather.renderWeatherColumn()}
-        ${renderDestaqueColumn(featured)}
+  if (!sceneShellBuilt) {
+    root.innerHTML = `
+      <div class="app-shell">
+        <section class="scene-container">
+          ${window.PsyduckMascot.renderFarmBackgroundSvg()}
+          <div class="scene-foreground" id="sceneForeground"></div>
+          <button class="settings-btn" data-action="open-settings" aria-label="Ajustes">${pixelGearSvg(18)}</button>
+          <button class="methods-btn" data-action="open-methods" aria-label="Métodos">?</button>
+        </section>
+        <div class="wooden-dashboard" id="woodenDashboard"></div>
       </div>
-    </div>
+      <div id="modalRoot"></div>
+    `;
+    sceneShellBuilt = true;
+    updateSceneThemeClasses();
+    // Reavalia dia/noite/clima a cada minuto mesmo sem nenhuma
+    // interação — senão a cena só mudaria de tema quando o usuário
+    // clicasse em algo.
+    setInterval(updateSceneThemeClasses, 60000);
+  } else {
+    updateSceneThemeClasses();
+  }
 
+  document.getElementById("sceneForeground").innerHTML = `
+    <div class="mascot-wrap">${window.PsyduckMascot.renderMascotSvg(mood)}</div>
+    ${ducks.map((d) => {
+      const pos = hashPos(d.id);
+      return `<button class="farm-duck" data-action="show-duck" data-id="${d.id}" style="left:${pos.left}%; top:${pos.top}%; animation-delay:${pos.delay}s;">${window.PsyduckMascot.renderDuckIcon(d.variantId, { size: 46 })}</button>`;
+    }).join("")}
+    <span class="scene-mood-badge">${window.PsyduckMascot.MOOD_LABELS[mood]}</span>
+    ${ducks.length ? `<span class="scene-duck-count">${ducks.length} pato(s)</span>` : ""}
+  `;
+
+  document.getElementById("woodenDashboard").innerHTML = `
+    ${await renderMoedasColumn(state)}
+    ${renderLembretesColumn(pending)}
+    ${renderTarefasColumn(pending, tasks.filter((t) => t.done))}
+    ${renderFazendaColumn(ducks)}
+    ${renderLivrosColumn(books)}
+    ${await window.PsyduckWeather.renderWeatherColumn()}
+    ${renderDestaqueColumn(featured)}
+  `;
+
+  document.getElementById("modalRoot").innerHTML = `
     ${settingsOpen ? await renderSettingsModal() : ""}
     ${methodsOpen ? renderMethodsModal() : ""}
   `;
@@ -278,7 +311,7 @@ const OTF_STATES = [
 ];
 const PRIORITY_STATES = [null, "A", "B", "C", "D"];
 
-function renderTarefasColumn(pending) {
+function renderTarefasColumn(pending, done) {
   return `
     <section class="column col-tarefas">
       <div class="column-header">
@@ -290,6 +323,18 @@ function renderTarefasColumn(pending) {
           <input type="text" placeholder="+ Adicionar tarefa..." onkeydown="if(event.key==='Enter') window.PsyduckApp.quickAddTask(this)" />
         </div>
         ${pending.map(renderTaskRowMini).join("") || `<p class="empty">Tudo em dia!</p>`}
+        ${
+          done.length
+            ? `<details class="done-tasks-details">
+                <summary>Concluídas (${done.length})</summary>
+                ${done
+                  .slice()
+                  .reverse()
+                  .map(renderTaskRowMini)
+                  .join("")}
+              </details>`
+            : ""
+        }
       </div>
       <div class="column-footer">+chance de pato a cada tarefa concluída ✓</div>
     </section>

@@ -5,6 +5,37 @@
 
 const CACHE_MINUTES = 30;
 
+// Cache em memória (síncrono) do último código de clima visto — a cena
+// (mascot.js) precisa ler isso de forma síncrona pra decidir qual
+// classe de clima aplicar no SVG, sem esperar um fetch a cada
+// renderização. Começa em "clear" até o primeiro fetch real terminar.
+let lastWeatherCode = 0;
+
+// Mapeia os códigos WMO do Open-Meteo pra uma das 4 classes visuais
+// que a cena entende: clear | rain | storm | snow.
+function weatherCodeToSceneClass(code) {
+  if ([95, 96, 99].includes(code)) return "weather-active-storm";
+  if ([71, 73, 75, 77, 85, 86].includes(code)) return "weather-active-snow";
+  if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(code)) return "weather-active-rain";
+  return "weather-active-clear";
+}
+
+// Chamada pela cena (mascot.js), de forma síncrona, sempre que ela
+// precisa desenhar — reflete o último clima realmente buscado.
+function getSceneWeatherClass() {
+  return weatherCodeToSceneClass(lastWeatherCode);
+}
+
+// Dia (07-17h) / Pôr do sol (17-19h) / Noite (19-05h) / Nascer (05-07h)
+// — mesma faixa de horário do cenário original do usuário.
+function getSceneTimeClass() {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 7) return "theme-sunrise";
+  if (hour >= 7 && hour < 17) return "theme-day";
+  if (hour >= 17 && hour < 19) return "theme-sunset";
+  return "theme-night";
+}
+
 async function getStoredCoords() {
   return window.PsyduckDB.getSetting("weatherCoords", null);
 }
@@ -58,11 +89,14 @@ async function getWeatherData() {
     let startIndex = times.findIndex((t) => t.slice(0, 13) >= nowLocal);
     if (startIndex === -1) startIndex = 0;
     const hourlyTemps = (data.hourly.temperature_2m || []).slice(startIndex, startIndex + 12);
+    const weatherCode = data.current_weather.weathercode;
     const cache = {
       currentTemp: data.current_weather.temperature,
       hourlyTemps,
+      weatherCode,
       fetchedAt: new Date().toISOString(),
     };
+    lastWeatherCode = weatherCode;
     await window.PsyduckDB.setSetting("weatherCache", cache);
     return cache;
   } catch (err) {
@@ -70,6 +104,14 @@ async function getWeatherData() {
     return cached || null;
   }
 }
+
+// Roda uma vez ao carregar o script: se já existir clima cacheado de
+// uma sessão anterior, usa ele pra cena não começar sempre em "clear"
+// até o primeiro fetch novo terminar.
+(async () => {
+  const cached = await window.PsyduckDB.getSetting("weatherCache", null);
+  if (cached && typeof cached.weatherCode === "number") lastWeatherCode = cached.weatherCode;
+})();
 
 function renderSparkline(temps) {
   if (!temps || temps.length < 2) return "";
@@ -115,4 +157,4 @@ async function renderWeatherColumn() {
   `;
 }
 
-window.PsyduckWeather = { requestLocation, getWeatherData, renderWeatherColumn };
+window.PsyduckWeather = { requestLocation, getWeatherData, renderWeatherColumn, getSceneWeatherClass, getSceneTimeClass };

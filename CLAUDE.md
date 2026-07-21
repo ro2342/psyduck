@@ -30,7 +30,7 @@ acompanhado até o fim.
   JS sem build, não Next.js). Só implementar algo de lá se o usuário
   pedir explicitamente aquele item específico.
 
-## Estado atual (v0.1.11)
+## Estado atual (v0.1.12)
 
 Só existe o PWA (`www/`), rodando 100% local — **sem sync com nuvem,
 sem app nativo ainda** (Obsidian/clima/livros já existem, mas Google
@@ -426,6 +426,66 @@ clique no fundo; modal de Métodos abre com os 10 métodos e fecha;
 clima confirmado com 12 pontos no gráfico (era 4, dependendo da hora);
 checkbox de tarefa sem regressão de XP duplicado; mascote novo
 renderizando com os elementos de piscar no DOM.
+
+**v0.1.12 (cena dia/noite/clima real + mascote menor + concluídas
+visíveis)**:
+1. **Mascote reduzido**: `.mascot-wrap` de `width:22%/max-width:200px`
+   pra `13%/120px` — usuário achou grande demais depois de ver de
+   verdade.
+2. **Tarefas concluídas voltaram a aparecer**: a coluna Todos só
+   mostrava `pending` (uma decisão de v0.1.9 que nunca foi
+   questionada até o usuário notar que TDAH se beneficia de ver o que
+   já foi feito — reforço visual de progresso). Adicionado
+   `<details class="done-tasks-details">Concluídas (N)</details>`
+   recolhível no fim da coluna, reaproveitando `renderTaskRowMini`
+   (já tinha estilo `.done` riscado, só não era chamado pra tarefas
+   concluídas).
+3. **Cena de fundo trocada pela arte do usuário**
+   (`cenario_pixel_art_16bit-v2.html`, um arquivo local que ele
+   forneceu): céu com 4 fases reais de horário (dia/pôr-do-sol/noite/
+   nascer-do-sol, via `getSceneTimeClass()` em `weather.js`, checando
+   `new Date().getHours()`) e 4 estados de clima real (limpo/chuva/
+   tempestade/neve, via `getSceneWeatherClass()`, mapeando o código
+   WMO que o Open-Meteo já devolvia mas que eu não usava — `weathercode`
+   dentro de `current_weather`). Isso troca a cena inteira de céu/
+   montanhas por uma bem mais rica (~800 elementos, incluindo uma
+   "cidadezinha" ao fundo com janelas que acendem à noite) — a
+   casa/horta/cachorro/lago do Psyduck (meus, versões compactas
+   `smallHouse`/`smallGarden`/`smallDog`/`smallLake` em `mascot.js`)
+   entram por cima, reposicionados pro novo viewBox `0 0 400 225`
+   (a cena original era `0 0 800 400`).
+   - **Corrigido um bug real no próprio arquivo original do usuário**:
+     um valor de cor inválido (`#72bffff`, 7 dígitos hex) virou
+     `#72bfff`.
+   - **Corrigido outro bug meu, achado antes de subir**: colei o
+     comentário de atribuição em `style.css` sem fechar o `/* */` antes
+     do CSS de verdade começar — isso teria comentado TODAS as regras
+     de tema/clima, deixando elas mortas silenciosamente. Pego
+     conferindo o arquivo depois de colar, corrigido antes de testar.
+   - **Refatoração de performance necessária**: a cena nova tem ~800
+     elementos SVG — meu `render()` reconstruía o `#app` inteiro do
+     zero a cada clique (tarefa concluída, pílula clicada, etc.), o
+     que teria redesenhado a cena pesada centenas de vezes por sessão.
+     `render()` agora só monta a cena UMA VEZ (`sceneShellBuilt`) e
+     depois só atualiza a classe de tema/clima nela
+     (`updateSceneThemeClasses()`, chamada a cada render + um
+     `setInterval` de 60s pra continuar avançando o relógio mesmo sem
+     interação) — o resto (mascote/patos dentro da cena, dashboard,
+     modais) continua sendo redesenhado normalmente a cada mudança,
+     em containers (`#sceneForeground`/`#woodenDashboard`/`#modalRoot`)
+     que ficam dentro do `#app` fixo.
+
+**Ainda pendente** (usuário pediu, não coube nesta leva): acesso
+funcional de verdade aos métodos (um Kanban de verdade, matriz de
+Eisenhower de verdade, etc. — não só a explicação em texto do modal de
+Métodos da v0.1.11). Próximo passo natural.
+
+Testado via CDP: `.farm-bg` confirmado com a MESMA referência de
+elemento DOM antes/depois de uma interação normal (prova de que a cena
+não é redesenhada); classe de tema real batendo com o horário do
+sistema (`theme-night` no teste, rodado à noite); tarefas concluídas
+aparecendo dentro do `<details>`; modal do pato fechando (com espera
+maior — o teste anterior deu falso negativo por timing, não por bug).
 
 ## Onde ficam as coisas
 

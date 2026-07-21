@@ -146,8 +146,8 @@ textarea { min-height: 50px; resize: vertical; }
   position: absolute;
   left: 8%;
   bottom: 4%;
-  width: 22%;
-  max-width: 200px;
+  width: 13%;
+  max-width: 120px;
   animation: bob 3.5s ease-in-out infinite;
   filter: drop-shadow(0 8px 10px rgba(0,0,0,0.2));
 }
@@ -450,6 +450,14 @@ textarea { min-height: 50px; resize: vertical; }
 }
 .task-row-mini:last-child { border-bottom: none; }
 .task-row-mini.done .task-mini-title { text-decoration: line-through; color: #27ae60; }
+.done-tasks-details { margin-top: 10px; }
+.done-tasks-details summary {
+  cursor: pointer;
+  font-family: var(--font-pixel-display);
+  font-size: 0.6rem;
+  color: var(--text-soft);
+  padding: 4px 0;
+}
 .task-mini-top { display: flex; align-items: center; gap: 6px; }
 .task-mini-title { flex: 1; }
 .task-mini-controls {
@@ -578,3 +586,175 @@ textarea { min-height: 50px; resize: vertical; }
   box-shadow: var(--shadow);
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* ---------- cena dinâmica: ciclo dia/noite + clima real ---------- */
+/* Vem do cenario_pixel_art_16bit-v2.html que o usuário forneceu — céu
+   muda de cor por horário real (dia/pôr do sol/noite/nascer do sol,
+   ver getSceneTimeClass() em weather.js) e reage ao clima real vindo
+   do Open-Meteo (getSceneWeatherClass() em weather.js: chuva, neve,
+   tempestade ou limpo). Um typo de cor do arquivo original
+   (#72bffff, 7 dígitos hex — inválido) foi corrigido pra #72bfff. */
+        /* === ANIMATIONS & DYNAMIC THEMES === */
+        /* Clouds drift */
+        @keyframes drift {
+            from { transform: translateX(-100px); }
+            to { transform: translateX(450px); }
+        }
+        .cloud {
+            animation: drift 35s linear infinite;
+        }
+        .cloud:nth-child(2) { animation-duration: 45s; animation-delay: -15s; }
+        .cloud:nth-child(3) { animation-duration: 30s; animation-delay: -5s; }
+        .cloud:nth-child(4) { animation-duration: 50s; animation-delay: -25s; }
+
+        /* Stars twinkle */
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 1.0; }
+        }
+        .star {
+            animation: twinkle 2s ease-in-out infinite;
+        }
+
+        /* Rain fall */
+        @keyframes rainfall {
+            from { transform: translate(0, -50px); }
+            to { transform: translate(-30px, 250px); }
+        }
+        .raindrop {
+            stroke: #a0d8ef;
+            stroke-width: 1;
+            opacity: 0.7;
+            animation: rainfall 0.6s linear infinite;
+        }
+
+        /* Snow fall */
+        @keyframes snowfall {
+            0% { transform: translate(0, -20px); }
+            50% { transform: translate(15px, 110px); }
+            100% { transform: translate(-5px, 240px); }
+        }
+        .snowflake {
+            animation: snowfall 3s linear infinite;
+        }
+
+        /* Thunder lightning flash */
+        @keyframes thunder {
+            0%, 90%, 100% { opacity: 0; }
+            92%, 96% { opacity: 0.8; }
+            94%, 98% { opacity: 0.2; }
+        }
+        .lightning-flash {
+            animation: thunder 7s infinite;
+        }
+
+        /* --- TIME OF DAY COLOR PALETTES (CSS VARIABLES) --- */
+        /* DAY (Default) */
+        .theme-day .sky-band-0 { fill: #2fa1ed; }
+        .theme-day .sky-band-1 { fill: #43a8ed; }
+        .theme-day .sky-band-2 { fill: #5bb4f1; }
+        .theme-day .sky-band-3 { fill: #72bfff; }
+        .theme-day .sky-band-4 { fill: #8ccdff; }
+        .theme-day .sky-band-5 { fill: #a3daff; }
+        .theme-day .celestial-glow { fill: #fff5b8; }
+        .theme-day .celestial-core { fill: #ffdf40; }
+        .theme-day .celestial-body { transform: translate(340px, 35px); transition: transform 2s ease; }
+        .theme-day .stars-layer { display: none; }
+        .theme-day .mountain-bg { fill: #24524d; }
+        .theme-day .treeline { fill: #1e4d3b; }
+        .theme-day .grass-main { fill: #55b047; }
+        .theme-day .grass-even { fill: #4ca33e; }
+        .theme-day .grass-odd { fill: #58b849; }
+        .theme-day .path-stone { fill: #c0b4a0; }
+        .theme-day .path-border { fill: #9a8f7c; }
+        .theme-day .cloud-base { fill: #d9f0ff; }
+        .theme-day .ambient-overlay { fill: transparent; }
+        .theme-day .lamp-light { fill: #777777; }
+        .theme-day .lamp-glow { opacity: 0 !important; }
+
+        /* SUNSET (Pôr do Sol) */
+        .theme-sunset .sky-band-0 { fill: #4a2e80; }
+        .theme-sunset .sky-band-1 { fill: #8c3a8e; }
+        .theme-sunset .sky-band-2 { fill: #c75276; }
+        .theme-sunset .sky-band-3 { fill: #eb7b58; }
+        .theme-sunset .sky-band-4 { fill: #f9a852; }
+        .theme-sunset .sky-band-5 { fill: #ffd36b; }
+        .theme-sunset .celestial-glow { fill: #ff8c42; opacity: 0.5; }
+        .theme-sunset .celestial-core { fill: #ff4500; }
+        .theme-sunset .celestial-body { transform: translate(200px, 75px); transition: transform 2s ease; }
+        .theme-sunset .stars-layer { display: none; }
+        .theme-sunset .mountain-bg { fill: #3d2657; }
+        .theme-sunset .treeline { fill: #28173b; }
+        .theme-sunset .grass-main { fill: #488a44; }
+        .theme-sunset .grass-even { fill: #3f783b; }
+        .theme-sunset .grass-odd { fill: #4f964a; }
+        .theme-sunset .path-stone { fill: #b09880; }
+        .theme-sunset .path-border { fill: #8a7460; }
+        .theme-sunset .cloud-base { fill: #f0a88b; }
+        .theme-sunset .ambient-overlay { fill: #ff5500; opacity: 0.15; mix-blend-mode: color-burn; }
+        .theme-sunset .lamp-light { fill: #ffea78; }
+        .theme-sunset .lamp-glow { opacity: 0.15 !important; fill: #ffaa00; }
+        .theme-sunset .pc-window { fill: #ffd276 !important; }
+
+        /* NIGHT (Noite) */
+        .theme-night .sky-band-0 { fill: #080c14; }
+        .theme-night .sky-band-1 { fill: #0c1424; }
+        .theme-night .sky-band-2 { fill: #121e36; }
+        .theme-night .sky-band-3 { fill: #182848; }
+        .theme-night .sky-band-4 { fill: #1f345c; }
+        .theme-night .sky-band-5 { fill: #27406e; }
+        .theme-night .celestial-glow { fill: #cce6ff; opacity: 0.2; }
+        .theme-night .celestial-core { fill: #f0f8ff; }
+        .theme-night .celestial-body { transform: translate(70px, 30px); transition: transform 2s ease; }
+        .theme-night .stars-layer { display: block; }
+        .theme-night .mountain-bg { fill: #0f1826; }
+        .theme-night .treeline { fill: #080d14; }
+        .theme-night .grass-main { fill: #23472f; }
+        .theme-night .grass-even { fill: #1c3825; }
+        .theme-night .grass-odd { fill: #295437; }
+        .theme-night .path-stone { fill: #5a6675; }
+        .theme-night .path-border { fill: #3f4854; }
+        .theme-night .cloud-base { fill: #3a4c66; }
+        .theme-night .ambient-overlay { fill: #001133; opacity: 0.4; mix-blend-mode: multiply; }
+        .theme-night .lamp-light { fill: #ffffaa; }
+        .theme-night .lamp-glow { opacity: 0.35 !important; fill: #ffff55; }
+        /* Windows glow warm yellow at night! */
+        .theme-night .pc-window { fill: #ffea78 !important; filter: drop-shadow(0 0 3px #ffea78); }
+
+        /* SUNRISE (Nascer do Sol) */
+        .theme-sunrise .sky-band-0 { fill: #385170; }
+        .theme-sunrise .sky-band-1 { fill: #5f7a9c; }
+        .theme-sunrise .sky-band-2 { fill: #9eb2c0; }
+        .theme-sunrise .sky-band-3 { fill: #f1b8a5; }
+        .theme-sunrise .sky-band-4 { fill: #f6d198; }
+        .theme-sunrise .sky-band-5 { fill: #f4f9f5; }
+        .theme-sunrise .celestial-glow { fill: #ffeead; opacity: 0.4; }
+        .theme-sunrise .celestial-core { fill: #ffcc5c; }
+        .theme-sunrise .celestial-body { transform: translate(80px, 70px); transition: transform 2s ease; }
+        .theme-sunrise .stars-layer { display: none; }
+        .theme-sunrise .mountain-bg { fill: #3a4b5c; }
+        .theme-sunrise .treeline { fill: #243340; }
+        .theme-sunrise .grass-main { fill: #48994a; }
+        .theme-sunrise .grass-even { fill: #3e8540; }
+        .theme-sunrise .grass-odd { fill: #52a855; }
+        .theme-sunrise .path-stone { fill: #b8b0a4; }
+        .theme-sunrise .path-border { fill: #8f877c; }
+        .theme-sunrise .cloud-base { fill: #fce2c4; }
+        .theme-sunrise .ambient-overlay { fill: #ff9900; opacity: 0.1; mix-blend-mode: overlay; }
+        .theme-sunrise .lamp-light { fill: #ffffaa; }
+        .theme-sunrise .lamp-glow { opacity: 0.1 !important; }
+
+        /* --- WEATHER STYLES --- */
+        .weather-active-rain .ambient-overlay { fill: #002244; opacity: 0.3; mix-blend-mode: multiply; }
+        .weather-active-storm .ambient-overlay { fill: #001122; opacity: 0.5; mix-blend-mode: multiply; }
+        .weather-active-snow .grass-main { fill: #dcf0f7 !important; }
+
+/* O arquivo original escondia/mostrava chuva/neve/raio via JS
+   (element.style.display), não CSS. Aqui não tem esse JS -- as
+   classes de clima vêm de weather.js/app.js, então a visibilidade
+   também precisa vir de CSS (com !important pra vencer o
+   style="display:none" que já vem escrito em cada <g>). */
+.weather-active-rain .weather-rain,
+.weather-active-storm .weather-rain { display: block !important; }
+.weather-active-snow .weather-snow { display: block !important; }
+.weather-active-storm .lightning-flash { display: block !important; }
