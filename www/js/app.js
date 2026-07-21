@@ -503,7 +503,24 @@ async function saveReflectionNote(textarea) {
   task.reflectionNote = textarea.value;
   await window.PsyduckDB.saveTask(task);
 }
-window.PsyduckApp = { saveReflectionNote };
+
+// Botão "Forçar atualização" em Ajustes — remove o Service Worker e
+// todo o cache dele, depois recarrega. É o jeito garantido de sair de
+// uma versão travada em cache (recarregar sozinho nem sempre basta,
+// porque o navegador pode continuar sendo controlado pelo SW antigo).
+async function forceUpdate() {
+  if ("serviceWorker" in navigator) {
+    const regs = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(regs.map((r) => r.unregister()));
+  }
+  if ("caches" in window) {
+    const keys = await caches.keys();
+    await Promise.all(keys.map((k) => caches.delete(k)));
+  }
+  window.location.reload();
+}
+
+window.PsyduckApp = { saveReflectionNote, forceUpdate };
 
 function escapeHtml(str) {
   const div = document.createElement("div");
@@ -858,7 +875,15 @@ route("/settings", async () => {
     </section>
     <section class="panel">
       <h2>Sincronização</h2>
-      <p class="hint">Ainda não disponível nesta versão (v${window.PsyduckData.APP_VERSION}) — chega na v0.2 com login Google.</p>
+      <p class="hint">Ainda não disponível — chega na v0.2 com login Google.</p>
+    </section>
+    <section class="panel">
+      <h2>Sobre</h2>
+      <p class="dash-level">Psyduck v${window.PsyduckData.APP_VERSION}</p>
+      <p class="hint">Se você acabou de atualizar o app e a tela não mudou nada, o
+      navegador pode estar servindo uma cópia antiga guardada (cache do
+      Service Worker). Toque no botão abaixo pra forçar buscar tudo de novo.</p>
+      <button class="btn btn-block" onclick="window.PsyduckApp.forceUpdate()">Forçar atualização</button>
     </section>
   `;
 });
