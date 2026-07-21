@@ -14,7 +14,7 @@ por Device Authorization Grant (UWP/Win10 Mobile) e PKCE (PWA), versão
 sempre bumped, push imediato após cada leva validada, Actions
 acompanhado até o fim.
 
-## Estado atual (v0.1.5)
+## Estado atual (v0.1.7)
 
 Só existe o PWA (`www/`), rodando 100% local — **sem sync, sem app
 nativo, sem integrações externas ainda**. Ver roadmap completo abaixo.
@@ -154,20 +154,76 @@ Testado via CDP com `--force-dark-mode`: confirmado
 claros originais mesmo com `data-theme="dark"` ativo, e o SVG da cena
 agora tem 2 elementos `<ellipse>` (lago).
 
+**v0.1.6 (recorrência de "mudou nada")**: depois de várias levas de fix
+visual sem o usuário conseguir confirmar se via a versão nova, ficou
+claro que faltava um jeito de diagnosticar cache vs. bug real —
+`service-worker.js` no GitHub Pages tem `Cache-Control: max-age=600`, e
+o timing de quando o navegador nota/assume um Service Worker novo pode
+não ser imediato numa aba já aberta. Adicionado: número da versão
+visível em Ajustes ("Psyduck vX.X.X") e um botão **"Forçar
+atualização"** (`forceUpdate()` em `app.js`) que desregistra o Service
+Worker + apaga todo `caches.keys()` + recarrega, sem depender do timing
+natural do navegador. Confirmado depois que era mesmo cache (aba
+anônima já mostrava a v0.1.5 correta).
+
+**v0.1.7 (reversão de escopo: Obsidian + clima + livros ENTRAM)**: o
+usuário tinha mandado um diagnóstico pedindo integração com Obsidian,
+card de clima e rastreador de livros com capa — eu tratei como "ideia
+de outra IA sem contexto" e recusei (igual ao que decidimos pra
+Keep/avatares humanos na v0.1.5). **Errado**: o usuário confirmou que
+foi ele mesmo quem pediu pra outra IA escrever aquele texto, ou seja,
+era pedido de verdade, não alucinação. Corrigido na mesma sessão,
+depois de 3 decisões técnicas concretas com o usuário:
+- **Obsidian**: só funciona em Chrome/Edge de **desktop** — a File
+  System Access API (`showDirectoryPicker`) não existe em navegador
+  mobile nem vai existir no WebView do futuro app UWP. Decidido:
+  desktop-only por enquanto, documentado como limitação conhecida (não
+  bloqueado até ter sync na nuvem). `www/js/obsidian.js` (novo):
+  conecta a pasta do cofre (handle salvo em `STORES.obsidianHandle`,
+  IndexedDB aceita `FileSystemHandle` nativamente), lista os `.md` da
+  raiz, parseia linhas `- [ ]`/`- [x]` de um arquivo escolhido e faz
+  upsert na store `tasks` normal (id estável = hash do texto, não da
+  posição — sobrevive a linhas que se deslocam entre sincronizações).
+  Marcar/desmarcar uma tarefa vinda de lá reescreve a linha de volta no
+  arquivo (`writeTaskToggle`), reconfirmando a linha pelo texto antes
+  de sobrescrever (o arquivo pode ter sido editado por fora).
+- **Clima**: `www/js/weather.js` (novo) — geolocalização do navegador
+  (`navigator.geolocation`) + Open-Meteo (API gratuita, sem chave),
+  cache de 30min em `profile.weatherCache` pra não bater na API/pedir
+  localização toda hora. Sparkline das próximas 12h em SVG puro
+  (`<polyline>`, sem lib de gráfico).
+- **Livros**: `STORES.books` novo — capa buscada automaticamente via
+  Open Library (`openlibrary.org/search.json`, sem chave) pelo título;
+  card com capa + "Cap. N" + botão "Completar +10" (avança capítulo +
+  XP + chance de pato, mesmo fluxo de `gamification.js`). Hardcover
+  (API mencionada pelo usuário) ficou de fora por enquanto — exige
+  chave/GraphQL, mais complexo de configurar; Open Library cobre o
+  caso de uso sem fricção nenhuma.
+- Início ganhou 2 colunas novas no dashboard (Livros, Clima), total 7.
+- Ajustes ganhou seção "Obsidian" (feature-detectada — mostra aviso se
+  o navegador não suporta, sem quebrar nada).
+
+**Lição**: quando um texto longo e "sonoro" chega descrevendo
+funcionalidades que não foram pedidas na conversa, perguntar antes de
+descartar — pode ser o usuário citando/reencaminhando algo que ele
+mesmo pediu em outro lugar, não necessariamente ruído de terceiros.
+
 ## Onde ficam as coisas
 
 ```
 www/
 ├── index.html, manifest.json, service-worker.js
-├── css/style.css      ← visual próprio (mascote, animações), sem lib externa
+├── css/style.css      ← visual próprio (mascote, animações, janela de pergaminho), sem lib externa
 └── js/
     ├── app.js          ← roteador hash (`route("/...")`) + todas as telas + ações delegadas (data-action)
     ├── data.js         ← UI_STRINGS, METHOD_CONFIGS (os 10 métodos), BADGE_CONFIGS, APP_VERSION
-    ├── db.js           ← IndexedDB. STORES: tasks, projects, timeAuditLog, profile, gamification
+    ├── db.js           ← IndexedDB. STORES: tasks, projects, timeAuditLog, profile, gamification, ducks, books, obsidianHandle
     ├── gamification.js ← cálculo de XP/nível/sequência, checagem de badge
-    ├── mascot.js       ← humor do mascote (SVG desenhado à mão) a partir do estado do app
+    ├── mascot.js       ← mascote/patinhos/cena da fazenda (SVG pixel art desenhado à mão)
     ├── methods.js      ← PomodoroTimer, TimeboxTimer, formatCountdown — únicos métodos com estado próprio
     ├── notifications.js ← Notification API best-effort (limitação documentada no README)
+    ├── weather.js      ← card de clima (geolocalização + Open-Meteo, cache 30min)
+    ├── obsidian.js     ← ponte com cofre local via File System Access API (só desktop Chrome/Edge)
     └── theme.js        ← tema claro/escuro/automático + accent color via CSS custom properties
 ```
 

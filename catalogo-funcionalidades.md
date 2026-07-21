@@ -139,6 +139,26 @@ não-oficial da comunidade — risco assumido de quebrar sem aviso
 Google Workspace/empresa). Decidido com o usuário: deixar de fora por
 enquanto. Se o Google abrir uma API de consumidor no futuro, revisitar.
 
+### ⭐ Obsidian (desktop only) — v0.1.7
+**O que é**: pedido do usuário — ler/escrever tarefas (`- [ ]`/`- [x]`)
+direto num arquivo `.md` do cofre local. **Onde entra**: seção
+"Obsidian" em Ajustes, `www/js/obsidian.js` (File System Access API).
+**Limitação real**: só funciona em Chrome/Edge de desktop — sem suporte
+em navegador mobile nem no futuro app UWP. Tarefas importadas viram
+tarefas normais do Psyduck (aparecem em Tarefas/Kanban/etc. também).
+
+### ⭐ Clima — v0.1.7
+**O que é**: pedido do usuário. **Onde entra**: coluna "Clima" no
+Início, `www/js/weather.js` — geolocalização do navegador + Open-Meteo
+(sem chave de API), sparkline das próximas 12h.
+
+### ⭐ Livros (rastreador de leitura) — v0.1.7
+**O que é**: pedido do usuário (reintroduzido depois de ter sido
+substituído por "Fazenda" na v0.1.3 — agora as duas colunas coexistem).
+**Onde entra**: coluna "Livros" no Início, `STORES.books`, capa buscada
+automática via Open Library (sem chave). Hardcover (API mencionada pelo
+usuário) fica de fora por enquanto — exige chave/GraphQL.
+
 ## 6. Ideias futuras (backlog, sem versão-alvo ainda)
 
 - Relatório visual da Auditoria de Tempo (gráfico de onde o tempo foi,

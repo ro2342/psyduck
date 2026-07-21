@@ -120,6 +120,9 @@ const actions = {
   async "task-toggle"(el) {
     const task = await window.PsyduckDB.toggleTaskDone(el.dataset.id);
     if (task && task.done) await celebrateCompletion(task);
+    if (task && task.obsidianFile) {
+      window.PsyduckObsidian.writeTaskToggle(task).catch((err) => console.warn("Falha ao escrever no Obsidian:", err));
+    }
     render();
   },
   async "task-delete"(el) {
@@ -146,6 +149,35 @@ const actions = {
     }
     await window.PsyduckDB.saveTask(task);
     if (el.dataset.to === "done") await celebrateCompletion(task);
+    render();
+  },
+  async "book-advance"(el) {
+    const book = await window.PsyduckDB.advanceBookChapter(el.dataset.id);
+    if (book) {
+      const result = await window.PsyduckGamification.onTaskCompleted(10, "capítulo de " + book.title);
+      flashToast(result.leveledUp ? `Subiu pro nível ${result.state.level}! 🎉` : `+10 XP — capítulo ${book.currentChapter}`);
+      if (result.newDuck) showDuckModal(result.newDuck, { justHatched: true });
+    }
+    render();
+  },
+  async "obsidian-connect"() {
+    try {
+      await window.PsyduckObsidian.connectVault();
+      flashToast("Cofre conectado! Escolha o arquivo de tarefas.");
+    } catch (err) {
+      flashToast("Conexão cancelada.");
+    }
+    render();
+  },
+  async "obsidian-sync-now"() {
+    const fileName = await window.PsyduckDB.getSetting("obsidianTaskFile", null);
+    if (!fileName) return;
+    try {
+      const count = await window.PsyduckObsidian.syncFromFile(fileName);
+      flashToast(`${count} tarefa(s) sincronizada(s) do Obsidian.`);
+    } catch (err) {
+      flashToast("Falha ao sincronizar: " + err.message);
+    }
     render();
   },
   async "eisenhower-set"(el) {
@@ -274,6 +306,22 @@ const forms = {
     window.location.hash = "#/tasks";
     render();
   },
+  async "new-book"(form) {
+    const data = Object.fromEntries(new FormData(form).entries());
+    if (!data.title || !data.title.trim()) return;
+    let coverUrl = null;
+    try {
+      const searchUrl = `https://openlibrary.org/search.json?title=${encodeURIComponent(data.title)}&limit=1`;
+      const res = await fetch(searchUrl);
+      const json = await res.json();
+      const coverId = json.docs && json.docs[0] && json.docs[0].cover_i;
+      if (coverId) coverUrl = `https://covers.openlibrary.org/b/id/${coverId}-S.jpg`;
+    } catch (err) {
+      console.warn("Busca de capa falhou (Open Library):", err);
+    }
+    await window.PsyduckDB.saveBook({ title: data.title.trim(), author: data.author || "", coverUrl });
+    render();
+  },
   async "time-audit-entry"(form) {
     const data = Object.fromEntries(new FormData(form).entries());
     if (!data.activity || !data.minutes) return;
@@ -315,6 +363,7 @@ route("/home", async () => {
   const pending = tasks.filter((t) => !t.done);
   const state = await db.getGamificationState();
   const ducks = await db.listDucks();
+  const books = await db.listBooks();
   const today = todayKey();
   const featured = await pickFeaturedTask(tasks, today);
 
@@ -324,10 +373,41 @@ route("/home", async () => {
       ${renderRemindersColumn(pending)}
       ${renderTarefasColumn(pending)}
       ${renderFazendaColumn(ducks)}
+      ${renderLivrosColumn(books)}
+      ${await window.PsyduckWeather.renderWeatherColumn()}
       ${renderDestaqueColumn(featured)}
     </div>
   `;
 });
+
+function renderLivrosColumn(books) {
+  return `
+    <section class="dash-col">
+      <h3>Livros</h3>
+      ${books
+        .map(
+          (b) => `
+        <div class="book-card">
+          ${b.coverUrl ? `<img class="book-cover" src="${b.coverUrl}" alt="" />` : `<div class="book-cover book-cover-placeholder">📕</div>`}
+          <div class="book-info">
+            <span class="book-title">${escapeHtml(b.title)}</span>
+            <span class="hint">Cap. ${b.currentChapter || 0}</span>
+            <button class="btn-mini" data-action="book-advance" data-id="${b.id}">Completar +10</button>
+          </div>
+        </div>`
+        )
+        .join("") || `<p class="empty">Nenhum livro ainda.</p>`}
+      <details>
+        <summary class="dash-see-all">+ adicionar livro</summary>
+        <form data-form="new-book" class="stack">
+          <input name="title" placeholder="Título do livro" required />
+          <input name="author" placeholder="Autor (opcional)" />
+          <button class="btn btn-primary" type="submit">Adicionar</button>
+        </form>
+      </details>
+    </section>
+  `;
+}
 
 // A tarefa "Destaque" fica fixada pro dia inteiro assim que escolhida
 // (mesmo depois de concluída, pra dar tempo do usuário registrar o
@@ -520,7 +600,20 @@ async function forceUpdate() {
   window.location.reload();
 }
 
-window.PsyduckApp = { saveReflectionNote, forceUpdate };
+async function chooseObsidianFile(fileName) {
+  await window.PsyduckDB.setSetting("obsidianTaskFile", fileName || null);
+  if (fileName) {
+    try {
+      const count = await window.PsyduckObsidian.syncFromFile(fileName);
+      flashToast(`${count} tarefa(s) sincronizada(s) do Obsidian.`);
+    } catch (err) {
+      flashToast("Falha ao sincronizar: " + err.message);
+    }
+  }
+  render();
+}
+
+window.PsyduckApp = { saveReflectionNote, forceUpdate, chooseObsidianFile };
 
 function escapeHtml(str) {
   const div = document.createElement("div");
@@ -824,13 +917,14 @@ route("/time-audit", async () => {
 });
 
 route("/methods", async () => {
-  return `
-    <h1>Métodos</h1>
+  return windowFrame(
+    "🧭 Métodos",
+    `
     <p class="hint">Nenhum desses precisa ser seguido à risca. Teste, use enquanto funcionar, troque quando parar de funcionar.</p>
     ${window.PsyduckData.METHOD_CONFIGS
       .map(
         (m) => `
-      <section class="panel">
+      <section class="window-section">
         <h2>${m.name}</h2>
         <p class="method-short">${escapeHtml(m.short)}</p>
         <p>${escapeHtml(m.explanation)}</p>
@@ -838,18 +932,74 @@ route("/methods", async () => {
       </section>`
       )
       .join("")}
-  `;
+  `
+  );
 });
+
+// Ajustes e Métodos ficam dentro de uma "janela de menu" (moldura de
+// madeira grossa + fundo pergaminho), pra parecer um menu de jogo em
+// vez de página de configurações comum — o resto do app (Tarefas,
+// Kanban etc.) continua com o visual de "nota pregada" normal.
+function windowFrame(title, innerHtml) {
+  return `
+    <div class="window-frame">
+      <div class="window-title-bar"><span>${title}</span></div>
+      <div class="window-body">${innerHtml}</div>
+    </div>
+  `;
+}
+
+async function renderObsidianSection() {
+  const supported = window.PsyduckObsidian.isSupported();
+  if (!supported) {
+    return `
+      <section class="window-section">
+        <h2>Obsidian</h2>
+        <p class="hint">Só funciona no Chrome ou Edge de computador — o navegador do celular (e o futuro app Windows Mobile) não suporta acesso a pastas locais.</p>
+      </section>
+    `;
+  }
+
+  const handle = await window.PsyduckObsidian.getStoredHandle();
+  if (!handle) {
+    return `
+      <section class="window-section">
+        <h2>Obsidian</h2>
+        <p class="hint">Conecte a pasta do seu cofre pra puxar as tarefas de um arquivo .md e marcar direto por aqui.</p>
+        <button class="btn btn-primary" data-action="obsidian-connect">Conectar cofre</button>
+      </section>
+    `;
+  }
+
+  const chosenFile = await window.PsyduckDB.getSetting("obsidianTaskFile", null);
+  const files = await window.PsyduckObsidian.listMarkdownFiles(handle);
+
+  return `
+    <section class="window-section">
+      <h2>Obsidian</h2>
+      <p class="hint">Cofre conectado. Escolha qual arquivo .md tem suas tarefas (linhas "- [ ] tarefa").</p>
+      <label class="field">Arquivo de tarefas
+        <select onchange="window.PsyduckApp.chooseObsidianFile(this.value)">
+          <option value="">—</option>
+          ${files.map((f) => `<option value="${f}" ${f === chosenFile ? "selected" : ""}>${f}</option>`).join("")}
+        </select>
+      </label>
+      ${chosenFile ? `<button class="btn" data-action="obsidian-sync-now">Sincronizar agora</button>` : ""}
+    </section>
+  `;
+}
 
 route("/settings", async () => {
   const db = window.PsyduckDB;
   const profile = (await db.getSetting("profile", null)) || {};
   const wip = (await db.getSetting("kanbanWipLimit", 3)) || 3;
   const notifGranted = "Notification" in window && Notification.permission === "granted";
+  const obsidianSection = await renderObsidianSection();
 
-  return `
-    <h1>Ajustes</h1>
-    <section class="panel">
+  return windowFrame(
+    "⚙️ Ajustes",
+    `
+    <section class="window-section">
       <h2>Aparência</h2>
       <label class="field">Tema
         <select onchange="window.PsyduckTheme.setThemeMode(this.value)">
@@ -862,22 +1012,23 @@ route("/settings", async () => {
         <input type="color" value="${profile.accentColor || window.PsyduckTheme.DEFAULT_ACCENT}" onchange="window.PsyduckTheme.setAccentColor(this.value)" />
       </label>
     </section>
-    <section class="panel">
+    <section class="window-section">
       <h2>Kanban</h2>
       <label class="field">Limite de tarefas em "Fazendo"
         <input type="number" min="1" max="10" value="${wip}" onchange="window.PsyduckDB.setSetting('kanbanWipLimit', Number(this.value))" />
       </label>
     </section>
-    <section class="panel">
+    ${obsidianSection}
+    <section class="window-section">
       <h2>Lembretes</h2>
       <p>${notifGranted ? "Permissão concedida." : "Sem permissão ainda — lembretes não vão aparecer."}</p>
       <button class="btn btn-primary" onclick="window.PsyduckNotifications.requestPermission().then(() => render())">Pedir permissão</button>
     </section>
-    <section class="panel">
+    <section class="window-section">
       <h2>Sincronização</h2>
       <p class="hint">Ainda não disponível — chega na v0.2 com login Google.</p>
     </section>
-    <section class="panel">
+    <section class="window-section">
       <h2>Sobre</h2>
       <p class="dash-level">Psyduck v${window.PsyduckData.APP_VERSION}</p>
       <p class="hint">Se você acabou de atualizar o app e a tela não mudou nada, o
@@ -885,7 +1036,8 @@ route("/settings", async () => {
       Service Worker). Toque no botão abaixo pra forçar buscar tudo de novo.</p>
       <button class="btn btn-block" onclick="window.PsyduckApp.forceUpdate()">Forçar atualização</button>
     </section>
-  `;
+    `
+  );
 });
 
 // ---------- boot ----------

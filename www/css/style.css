@@ -163,6 +163,35 @@ h2 { font-size: 1.05rem; margin: 0 0 10px; }
 details.panel { transform: none; }
 details.panel::before { display: none; }
 
+/* ---------- janela de menu (Ajustes/Métodos) ---------- */
+/* Moldura grossa de madeira + fundo pergaminho, pra parecer um menu
+   de jogo (tipo abrir o inventário no Stardew Valley) em vez de uma
+   página de configurações comum. Só usada em Ajustes e Métodos —
+   o resto do app continua com o visual de "nota pregada". */
+.window-frame {
+  background: #fdf6ea;
+  border: 6px solid var(--scene-trunk);
+  border-radius: 10px;
+  box-shadow: 0 10px 0 rgba(0,0,0,0.15), 0 10px 20px rgba(0,0,0,0.2);
+  overflow: hidden;
+}
+:root[data-theme="dark"] .window-frame { background: #3a2f22; }
+.window-title-bar {
+  background: var(--scene-trunk);
+  color: #fdf6ea;
+  font-weight: 800;
+  font-size: 1.1rem;
+  padding: 12px 18px;
+}
+.window-body { padding: 16px; color: #3a2a18; }
+:root[data-theme="dark"] .window-body { color: #f0e4cf; }
+.window-section {
+  padding: 14px 0;
+  border-bottom: 2px dashed var(--border-wood, #b98d54);
+}
+.window-section:last-child { border-bottom: none; }
+.window-section h2 { margin: 0 0 10px; font-size: 1rem; }
+
 .stack { display: flex; flex-direction: column; gap: 10px; }
 .field { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; color: var(--text-soft); }
 
@@ -412,6 +441,49 @@ textarea { min-height: 60px; resize: vertical; }
 
 .dash-farm-preview { display: flex; gap: 4px; align-items: flex-end; min-height: 30px; }
 .dash-farm-count { font-weight: 700; margin: 8px 0 0; }
+
+/* ---------- livros ---------- */
+
+.book-card {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.book-card:last-of-type { border-bottom: none; }
+.book-cover {
+  width: 40px;
+  height: 56px;
+  min-width: 40px;
+  object-fit: cover;
+  border-radius: 4px;
+  background: var(--border);
+}
+.book-cover-placeholder { display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+.book-info { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.book-title { font-weight: 700; font-size: 0.85rem; }
+.btn-mini {
+  align-self: flex-start;
+  border: none;
+  background: var(--accent-color);
+  color: #2c2116;
+  font-weight: 700;
+  font-size: 0.7rem;
+  padding: 4px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 2px;
+}
+
+/* ---------- clima ---------- */
+
+.weather-sparkline { width: 100%; height: 32px; margin: 6px 0; }
+
+.featured-check-row { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.featured-check-row input { width: 20px; height: 20px; }
+.featured-title { font-weight: 700; font-size: 1.05rem; }
+.featured-notes { color: var(--text-soft); font-size: 0.85rem; margin: 8px 0; }
 
 .featured-check-row { display: flex; align-items: center; gap: 10px; cursor: pointer; }
 .featured-check-row input { width: 20px; height: 20px; }

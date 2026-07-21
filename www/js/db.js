@@ -5,15 +5,17 @@
 // nasce pronto pra quando o Firestore entrar na v0.2.
 
 const DB_NAME = "psyduck";
-const DB_VERSION = 2; // v2: adiciona STORES.ducks (família da fazenda)
+const DB_VERSION = 3; // v3: adiciona STORES.books e STORES.obsidianHandle
 
 const STORES = {
-  tasks: "tasks", // { id, title, notes, projectId, dueAt, remindAt, priorityLetter, eisenhowerQuadrant, kanbanColumn, oneThreeFiveSlot, oneThreeFiveDate, isTwoMinuteTask, paretoHighImpact, timeboxMinutes, pomodoroSessionsLogged, xpValue, done, doneAt, deleted, updatedAt }
+  tasks: "tasks", // { id, title, notes, projectId, dueAt, remindAt, priorityLetter, eisenhowerQuadrant, kanbanColumn, oneThreeFiveSlot, oneThreeFiveDate, isTwoMinuteTask, paretoHighImpact, timeboxMinutes, pomodoroSessionsLogged, xpValue, done, doneAt, deleted, obsidianFile, obsidianLineIndex, updatedAt }
   projects: "projects", // { id, name, color, updatedAt }
   timeAuditLog: "timeAuditLog", // { id, activity, minutes, loggedAt, updatedAt }
   profile: "profile", // { key, value } — settings key/value, como no theartistsway
   gamification: "gamification", // { key: 'state', xp, level, streak, lastActiveDate, tasksCompleted, pomodorosCompleted, badges: [], updatedAt }
   ducks: "ducks", // { id, variantId, name, obtainedAt, sourceLabel, updatedAt } — a família de Psyducks da fazenda
+  books: "books", // { id, title, author, currentChapter, coverUrl, updatedAt } — rastreador de leitura
+  obsidianHandle: "obsidianHandle", // { key: 'vault', handle: FileSystemDirectoryHandle } — só existe em desktop Chrome/Edge
 };
 
 let dbInstance = null;
@@ -30,6 +32,8 @@ function openDB() {
       if (!db.objectStoreNames.contains(STORES.profile)) db.createObjectStore(STORES.profile, { keyPath: "key" });
       if (!db.objectStoreNames.contains(STORES.gamification)) db.createObjectStore(STORES.gamification, { keyPath: "key" });
       if (!db.objectStoreNames.contains(STORES.ducks)) db.createObjectStore(STORES.ducks, { keyPath: "id" });
+      if (!db.objectStoreNames.contains(STORES.books)) db.createObjectStore(STORES.books, { keyPath: "id" });
+      if (!db.objectStoreNames.contains(STORES.obsidianHandle)) db.createObjectStore(STORES.obsidianHandle, { keyPath: "key" });
     };
     req.onsuccess = () => {
       dbInstance = req.result;
@@ -119,6 +123,8 @@ async function saveTask(task) {
       deleted: false,
       reflectionMood: null, // 'bad' | 'ok' | 'good' | 'great' — só pra tarefa em Destaque
       reflectionNote: "",
+      obsidianFile: null, // nome do arquivo .md de origem, se veio do cofre conectado
+      obsidianLineIndex: null, // linha exata dentro do arquivo, pra reescrever o "- [ ]"/"- [x]"
     },
     task,
     { updatedAt: now }
@@ -244,6 +250,33 @@ async function addDuck(variantId, name, sourceLabel) {
   return duck;
 }
 
+// ---------- livros (rastreador de leitura) ----------
+
+async function listBooks() {
+  return dbGetAll(STORES.books);
+}
+
+async function saveBook(book) {
+  const full = Object.assign(
+    { id: uid(), title: "", author: "", currentChapter: 0, coverUrl: null },
+    book,
+    { updatedAt: new Date().toISOString() }
+  );
+  await dbPut(STORES.books, full);
+  notifyChange();
+  return full;
+}
+
+async function advanceBookChapter(id) {
+  const book = await dbGet(STORES.books, id);
+  if (!book) return null;
+  book.currentChapter = (book.currentChapter || 0) + 1;
+  book.updatedAt = new Date().toISOString();
+  await dbPut(STORES.books, book);
+  notifyChange();
+  return book;
+}
+
 window.PsyduckDB = {
   STORES,
   dbGet,
@@ -253,6 +286,9 @@ window.PsyduckDB = {
   uid,
   listTasks,
   saveTask,
+  listBooks,
+  saveBook,
+  advanceBookChapter,
   deleteTask,
   toggleTaskDone,
   listProjects,
