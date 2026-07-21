@@ -237,11 +237,18 @@ textarea { min-height: 60px; resize: vertical; }
 }
 .mascot-wrap { max-width: 220px; width: 42%; animation: bob 3.5s ease-in-out infinite; filter: drop-shadow(0 8px 10px rgba(0,0,0,0.2)); }
 .mascot-svg { width: 100%; height: auto; }
-.mascot-caption {
-  text-align: center;
-  color: var(--text-soft);
+.scene-mood-badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  max-width: 55%;
+  background: rgba(255,255,255,0.9);
+  color: #2c2116;
   font-weight: 700;
-  margin: 14px 0 16px;
+  font-size: 0.7rem;
+  line-height: 1.3;
+  padding: 6px 10px;
+  border-radius: 10px;
 }
 .scene-duck-count {
   position: absolute;
@@ -254,7 +261,6 @@ textarea { min-height: 60px; resize: vertical; }
   padding: 6px 12px;
   border-radius: 14px;
   text-decoration: none;
-  box-shadow: var(--shadow);
 }
 
 .farm-bg, .duck-icon, .mascot-svg { shape-rendering: crispEdges; }
@@ -343,27 +349,41 @@ textarea { min-height: 60px; resize: vertical; }
    Moedas/Lembretes/Tarefas/Fazenda/Destaque, rolável na horizontal em
    telas estreitas (celular) e lado a lado em telas largas. */
 
+/* Um painel de madeira só (sem margem, sem sombra, sem borda
+   arredondada) — as colunas são divisórias finas dentro do MESMO
+   frame, não cards separados flutuando.
+
+   Mobile de verdade, não "desktop espremido": no celular vira uma
+   pilha vertical (cada seção ocupa a largura toda, rolagem normal de
+   página — nada de carrossel horizontal escondendo colunas). Só em
+   tela larga (≥720px, onde cabe de verdade) vira lado a lado, igual à
+   referência (que era captura de desktop). */
 .dash-board {
   display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  padding: 4px 2px 12px;
-  margin: 0 -2px;
+  flex-direction: column;
+  background: var(--scene-trunk);
+  padding: 3px;
 }
 .dash-col {
-  flex: 0 0 80%;
-  scroll-snap-align: start;
   background: var(--bg-elevated);
-  border-radius: 14px;
-  padding: 16px 14px;
-  box-shadow: var(--shadow);
+  border-bottom: 2px solid var(--scene-trunk);
+  padding: 10px 10px 14px;
 }
-.dash-col h3 { margin: 0 0 10px; font-size: 0.95rem; }
-.dash-level { font-weight: 800; margin: 0 0 6px; }
-.dash-streak { color: var(--text-soft); font-size: 0.85rem; margin-top: 10px; }
-.coin-stack { margin-top: 10px; }
-.coin-row { font-size: 1.1rem; letter-spacing: 2px; line-height: 1.6; }
+.dash-col:last-child { border-bottom: none; }
+.dash-col h3 {
+  margin: 0 0 8px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-soft);
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 6px;
+}
+.dash-level { font-weight: 800; margin: 0 0 6px; font-size: 0.85rem; }
+.dash-streak { color: var(--text-soft); font-size: 0.78rem; margin-top: 8px; }
+.coin-stack { margin-top: 8px; }
+.coin-row { font-size: 1rem; letter-spacing: 1px; line-height: 1.5; }
 
 .mini-task-card {
   display: flex;
@@ -411,7 +431,6 @@ textarea { min-height: 60px; resize: vertical; }
 .dash-farm-preview { display: flex; gap: 4px; align-items: flex-end; min-height: 30px; }
 .dash-farm-count { font-weight: 700; margin: 8px 0 0; }
 
-.dash-featured { flex-basis: 88%; }
 .featured-check-row { display: flex; align-items: center; gap: 10px; cursor: pointer; }
 .featured-check-row input { width: 20px; height: 20px; }
 .featured-title { font-weight: 700; font-size: 1.05rem; }
@@ -440,9 +459,14 @@ textarea { min-height: 60px; resize: vertical; }
 }
 
 @media (min-width: 720px) {
-  .dash-board { overflow-x: visible; }
-  .dash-col { flex: 1 1 0; }
-  .dash-featured { flex-basis: auto; flex: 1.4 1 0; }
+  .dash-board { flex-direction: row; }
+  .dash-col {
+    flex: 1 1 0;
+    border-bottom: none;
+    border-right: 2px solid var(--scene-trunk);
+  }
+  .dash-col:last-child { border-right: none; }
+  .dash-featured { flex: 1.4 1 0; }
 }
 
 .xp-bar {

@@ -20,15 +20,62 @@ function parseHash() {
 async function render() {
   const { path, query } = parseHash();
   const handler = routes[path] || routes["/home"];
-  const result = await handler(query);
-  // Uma tela pode devolver só um HTML (a maioria) ou { scene, body } quando
-  // tem cena ilustrada de ponta a ponta (Início/Fazenda) — a cena vira
-  // irmã de .content, fora do container de largura máxima, pra ocupar a
-  // tela inteira em vez de ficar presa numa caixinha no meio.
-  const scene = typeof result === "object" && result.scene ? result.scene : "";
-  const body = typeof result === "object" ? result.body : result;
+  const body = await handler(query);
+  // A cena (pato + fazenda) é fixa em TODA tela, não só Início/Fazenda —
+  // é o "seu bichinho sempre visível", só o painel debaixo muda. Fica
+  // fora de .content (largura máxima) pra ocupar a tela inteira.
+  const scene = await renderTopScene(path);
   root.innerHTML = shell(path, body, scene);
   window.scrollTo(0, 0);
+}
+
+// Cena persistente: a versão compacta (mascote + contador de patos) em
+// quase toda tela; na Fazenda mesmo, vira a versão grande com os patos
+// espalhados no lago (clicáveis) — nunca as duas ao mesmo tempo.
+async function renderTopScene(path) {
+  const db = window.PsyduckDB;
+  const ducks = await db.listDucks();
+
+  if (path === "/farm") {
+    return `
+      <section class="farm-scene-wrap">
+        ${window.PsyduckMascot.renderFarmBackgroundSvg()}
+        <div class="farm-ducks">${renderFarmDuckButtons(ducks)}</div>
+      </section>
+    `;
+  }
+
+  const tasks = await db.listTasks();
+  const overdue = tasks.filter((t) => !t.done && t.dueAt && new Date(t.dueAt) < new Date());
+  const state = await db.getGamificationState();
+  const mood = window.PsyduckMascot.moodFor({ overdueCount: overdue.length, streak: state.streak, justLeveledUp: false });
+
+  return `
+    <section class="scene-hero">
+      ${window.PsyduckMascot.renderFarmBackgroundSvg()}
+      <div class="scene-foreground">
+        <div class="mascot-wrap">${window.PsyduckMascot.renderMascotSvg(mood)}</div>
+        <span class="scene-mood-badge">${window.PsyduckMascot.MOOD_LABELS[mood]}</span>
+        ${ducks.length ? `<a href="#/farm" class="scene-duck-count">🦆 +${ducks.length}</a>` : ""}
+      </div>
+    </section>
+  `;
+}
+
+function hashPos(id) {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return { left: 8 + (h % 84), top: 48 + ((h >> 8) % 42), delay: (h % 30) / 10 };
+}
+
+function renderFarmDuckButtons(ducks) {
+  if (!ducks.length) return `<p class="farm-empty">Ainda sem patinhos — conclua tarefas pra começar a família.</p>`;
+  return ducks
+    .map((d) => {
+      const pos = hashPos(d.id);
+      return `<button class="farm-duck" data-action="show-duck" data-id="${d.id}" style="left:${pos.left}%; top:${pos.top}%; animation-delay:${pos.delay}s;">${window.PsyduckMascot.renderDuckIcon(d.variantId, { size: 64 })}</button>`;
+    })
+    .join("");
 }
 
 const BOTTOM_NAV_ICONS = { "/home": "🏠", "/tasks": "📋", "/farm": "🦆", "/methods": "🧭", "/settings": "⚙️" };
@@ -266,26 +313,12 @@ route("/home", async () => {
   const db = window.PsyduckDB;
   const tasks = await db.listTasks();
   const pending = tasks.filter((t) => !t.done);
-  const overdue = pending.filter((t) => t.dueAt && new Date(t.dueAt) < new Date());
   const state = await db.getGamificationState();
   const ducks = await db.listDucks();
-  const mood = window.PsyduckMascot.moodFor({ overdueCount: overdue.length, streak: state.streak, justLeveledUp: false });
   const today = todayKey();
-
-  const scene = `
-    <section class="scene-hero">
-      ${window.PsyduckMascot.renderFarmBackgroundSvg()}
-      <div class="scene-foreground">
-        <div class="mascot-wrap">${window.PsyduckMascot.renderMascotSvg(mood)}</div>
-        ${ducks.length ? `<a href="#/farm" class="scene-duck-count">🦆 +${ducks.length} na fazenda</a>` : ""}
-      </div>
-    </section>
-  `;
-
   const featured = await pickFeaturedTask(tasks, today);
 
-  const body = `
-    <p class="mascot-caption">${window.PsyduckMascot.MOOD_LABELS[mood]}</p>
+  return `
     <div class="dash-board">
       ${renderCoinsColumn(state)}
       ${renderRemindersColumn(pending)}
@@ -294,8 +327,6 @@ route("/home", async () => {
       ${renderDestaqueColumn(featured)}
     </div>
   `;
-
-  return { scene, body };
 });
 
 // A tarefa "Destaque" fica fixada pro dia inteiro assim que escolhida
@@ -484,36 +515,9 @@ route("/farm", async () => {
   const db = window.PsyduckDB;
   const ducks = await db.listDucks();
 
-  // Posição pseudo-aleatória (mas estável) de cada pato em volta do lago,
-  // baseada num hash simples do id — mesmo pato sempre aparece no mesmo
-  // lugar entre uma renderização e outra, sem precisar guardar x/y.
-  function hashPos(id) {
-    let h = 0;
-    for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
-    return { left: 8 + (h % 84), top: 48 + ((h >> 8) % 42), delay: (h % 30) / 10 };
-  }
-
-  const scene = `
-    <section class="farm-scene-wrap">
-      ${window.PsyduckMascot.renderFarmBackgroundSvg()}
-      <div class="farm-ducks">
-        ${
-          ducks.length
-            ? ducks
-                .map((d) => {
-                  const pos = hashPos(d.id);
-                  return `<button class="farm-duck" data-action="show-duck" data-id="${d.id}" style="left:${pos.left}%; top:${pos.top}%; animation-delay:${pos.delay}s;">${window.PsyduckMascot.renderDuckIcon(d.variantId, { size: 64 })}</button>`;
-                })
-                .join("")
-            : `<p class="farm-empty">Ainda sem patinhos — conclua tarefas pra começar a família.</p>`
-        }
-      </div>
-    </section>
-  `;
-
-  const body = `
+  return `
     <h1>Fazenda dos Psyducks</h1>
-    <p class="hint">Cada tarefa concluída tem uma chance de chocar um novo Psyduck. Subir de nível garante um.</p>
+    <p class="hint">Cada tarefa concluída tem uma chance de chocar um novo Psyduck. Subir de nível garante um. Toque num pato lá em cima pra ver quem é.</p>
     <section class="panel">
       <h2>Família (${ducks.length})</h2>
       ${ducks
@@ -532,8 +536,6 @@ route("/farm", async () => {
         .join("") || `<p class="empty">Vazio por enquanto.</p>`}
     </section>
   `;
-
-  return { scene, body };
 });
 
 route("/tasks", async (query) => {

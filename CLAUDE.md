@@ -14,7 +14,7 @@ por Device Authorization Grant (UWP/Win10 Mobile) e PKCE (PWA), versão
 sempre bumped, push imediato após cada leva validada, Actions
 acompanhado até o fim.
 
-## Estado atual (v0.1.1)
+## Estado atual (v0.1.4)
 
 Só existe o PWA (`www/`), rodando 100% local — **sem sync, sem app
 nativo, sem integrações externas ainda**. Ver roadmap completo abaixo.
@@ -103,6 +103,31 @@ padrão estrutural e adaptado pro domínio do psyduck:
   cada render, marcar a tarefa como feita a fazia sumir do Destaque
   antes do usuário conseguir registrar o humor. Agora ela fica fixada
   o dia inteiro, mesmo depois de concluída.
+
+**v0.1.4 (três correções seguidas, direto depois da v0.1.3)**:
+1. **"Cara de dashboard de IA" de novo**: `.dash-col` ainda tinha
+   `box-shadow` + `border-radius: 14px` + `gap` entre colunas —
+   exatamente o card-flutuante-num-fundo-cinza rejeitado desde o
+   início. Trocado por um frame de madeira único (`.dash-board`,
+   `background: var(--scene-trunk)`) com colunas coladas, separadas só
+   por uma linha fina (`border`), sem sombra, sem raio de canto.
+2. **"O pato só aparece no Início/Fazenda, some nas outras telas"**: a
+   cena vinha só de `/home`/`/farm` via `{scene, body}`. Virou
+   persistente de verdade — `render()` agora sempre chama
+   `renderTopScene(path)` (nova função em `app.js`), **independente da
+   rota**: o mascote aparece em Tarefas, Kanban, Métodos, Ajustes,
+   tudo. Só a Fazenda troca a versão compacta pela versão grande com
+   os patos espalhados no lago (clicáveis), sem duplicar as duas.
+3. **"Mobile precisa de layout próprio, não desktop espremido"**:
+   `.dash-board` era `flex-direction: row` com scroll horizontal
+   (`scroll-snap`) por padrão — no celular vira carrossel escondendo 4
+   das 5 colunas até arrastar, ruim pra quem já tem dificuldade de
+   atenção. Invertido: **mobile-first é pilha vertical** (cada coluna
+   ocupa a largura toda, rolagem normal de página), só em telas
+   ≥720px (`@media (min-width: 720px)`) vira lado a lado como na
+   referência (que era captura de desktop). Isso corrige a descrição
+   de "rolável na horizontal" que ficou desatualizada no item v0.1.3
+   acima.
 
 ## Onde ficam as coisas
 
