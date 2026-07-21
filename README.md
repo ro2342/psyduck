@@ -8,12 +8,20 @@ dentro do app, com gamificação (XP, nível, sequência, badges), uma
 fazenda de Psyducks colecionáveis, rastreador de livros, card de clima
 e (no desktop) sincronização com tarefas do Obsidian.
 
-## Estado atual: v0.1.7 — PWA local
+## Estado atual: v0.1.9 — PWA local, dashboard de tela única
 
 Só o PWA existe por enquanto, rodando 100% local (IndexedDB, sem
 nuvem). Sync com Google, app nativo pra Windows 10 Mobile/Windows 11 e
 integrações (Google Tasks, Google Calendar, Bring!) estão no roadmap —
 ver `CLAUDE.md` e `catalogo-funcionalidades.md`.
+
+**A interface é uma tela única, sem menu inferior nem páginas** — cena
+da fazenda no topo, e um dashboard de 7 colunas de madeira embaixo
+(Moedas, Lembretes, Tarefas, Fazenda, Livros, Clima, Destaque) sempre
+visíveis ao mesmo tempo. Kanban/Eisenhower/Pomodoro/Time-Boxing/
+Auditoria de Tempo viram controles em miniatura dentro das colunas, não
+telas próprias. Único modal é o de Ajustes (ícone ⚙️ na cena). Ver
+"Arquitetura de tela única" em `CLAUDE.md` pro detalhe completo.
 
 **Obsidian só funciona no Chrome/Edge de computador** — o navegador do
 celular (e o futuro app Windows Mobile) não suportam acesso a pastas
@@ -34,12 +42,12 @@ www/
 ├── index.html, manifest.json, service-worker.js
 ├── css/style.css
 └── js/
-    ├── app.js            — roteador + todas as telas
+    ├── app.js            — dashboard de tela única (sem rotas): cena + 7 colunas + modal de Ajustes
     ├── data.js           — textos de interface + config dos 10 métodos + badges
-    ├── db.js              — IndexedDB (tarefas, projetos, auditoria de tempo, perfil, gamificação)
-    ├── gamification.js   — XP, nível, sequência, badges
-    ├── mascot.js          — o pato reage ao seu estado
-    ├── methods.js        — timers de Pomodoro e Time-Boxing, contagem regressiva
+    ├── db.js              — IndexedDB (tarefas, projetos, auditoria de tempo, perfil, gamificação, patos, livros)
+    ├── gamification.js   — XP, nível, sequência, moedas, badges
+    ├── mascot.js          — cena da fazenda + mascote + patos (sempre visíveis, não uma tela à parte)
+    ├── methods.js        — timer de foco embutido (5/10/15/20min), contagem regressiva
     ├── notifications.js  — lembretes via Notification API (best-effort — ver limitação abaixo)
     ├── weather.js        — card de clima (geolocalização + Open-Meteo)
     ├── obsidian.js       — sync com cofre local do Obsidian (só desktop Chrome/Edge)

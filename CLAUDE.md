@@ -14,10 +14,65 @@ por Device Authorization Grant (UWP/Win10 Mobile) e PKCE (PWA), versão
 sempre bumped, push imediato após cada leva validada, Actions
 acompanhado até o fim.
 
-## Estado atual (v0.1.8)
+## Estado atual (v0.1.9)
 
-Só existe o PWA (`www/`), rodando 100% local — **sem sync, sem app
-nativo, sem integrações externas ainda**. Ver roadmap completo abaixo.
+Só existe o PWA (`www/`), rodando 100% local — **sem sync com nuvem,
+sem app nativo ainda** (Obsidian/clima/livros já existem, mas Google
+Tasks/Calendar/Bring! e o app UWP continuam no roadmap). Ver roadmap
+completo abaixo.
+
+## Arquitetura de tela única (desde a v0.1.9 — LEIA ANTES DE MEXER NA UI)
+
+O app **não tem mais páginas/rotas separadas nem barra de navegação**.
+Isso foi uma decisão explícita do usuário (regra "PROÍBO
+terminantemente bottom-nav/páginas/paginação"), depois de eu ter
+construído (e ele ter aprovado, e depois pedido pra desfazer) um
+roteador hash com bottom-nav nas versões v0.1.1–v0.1.8. **Não
+reintroduzir rotas/páginas sem o usuário pedir de novo** — isso já foi
+tentado e revertido por instrução direta dele.
+
+`www/js/app.js` hoje é uma função `render()` só, chamada de novo a
+cada mutação, que desenha:
+- `.scene-container` (topo, ~42vh) — cena da fazenda + mascote + todos
+  os patos da família espalhados (sempre visíveis, não só numa tela
+  "Fazenda" — não existe mais tela dedicada) + botão de engrenagem.
+- `.wooden-dashboard` (resto da altura, `flex:1`) — 7 colunas lado a
+  lado dentro de um frame de madeira único: **Moedas, Lembretes,
+  Tarefas, Fazenda, Livros, Clima, Destaque**. `body` é
+  `height:100vh; overflow:hidden` — **nunca** a página inteira rola,
+  só o conteúdo de dentro de cada coluna (`.column-content { overflow-y:
+  auto }`) e o próprio `.wooden-dashboard` na horizontal quando as
+  colunas não cabem lado a lado (`overflow-x:auto` — isso vale também
+  no celular, por pedido explícito do usuário: "vale pra tudo,
+  inclusive celular", aceitando que fica mais apertado).
+- O único modal permitido é o de **Ajustes** (`.modal-overlay` +
+  `.window-frame`, aberto pelo botão `⚙️` no canto da cena). O modal de
+  "novo pato conquistado" (`.duck-modal-overlay`) também existe, mas é
+  uma celebração pontual, não uma "troca de tela".
+
+**Kanban, Matriz de Eisenhower, Pomodoro, Time-Boxing e Auditoria de
+Tempo perderam a tela própria** (decisão explícita do usuário, ciente
+de que ficam mais limitados) e viraram:
+- Kanban → botão-pílula `data-action="cycle-kanban"` em cada linha de
+  tarefa (cicla A Fazer→Fazendo→Feito→A Fazer; ainda respeita
+  `kanbanWipLimit`).
+- Eisenhower → botão-pílula `cycle-eisenhower` (cicla os 4 quadrantes +
+  vazio).
+- Regra 1-3-5 → botão-pílula `cycle-otf` (cicla grande/média/pequena/
+  vazio, carimba `oneThreeFiveDate` com o dia de hoje).
+- ABCD-Z → botão-pílula `cycle-priority`.
+- Regra dos 2 Minutos / 80/20 → chips `toggle-two-min`/`toggle-pareto`.
+- Pomodoro + Time-Boxing → viraram **um timer de foco só** (rodapé da
+  coluna Livros, botões 5/10/15/20 min, reaproveita
+  `PsyduckMethods.TimeboxTimer`; a classe `PomodoroTimer` com ciclos
+  trabalho/pausa foi **removida** de `methods.js` por ficar sem uso).
+- Catálogo de Métodos (texto explicativo dos 10 métodos) → substituído
+  por `title="..."` (tooltip) no ícone `ⓘ` do cabeçalho da coluna
+  Tarefas — não existe mais tela dedicada de explicação.
+
+Se o usuário pedir pra "voltar a ter uma tela de Kanban de verdade" ou
+similar, é reintroduzir complexidade que foi removida por pedido
+dele — perguntar antes de simplesmente devolver a versão antiga.
 
 **v0.1.1 (feedback do usuário sobre a v0.1.0)**: o usuário apontou que o
 visual ainda parecia "cara de app feito por IA" (referências mostradas:
@@ -223,6 +278,39 @@ centralizado é mais legível que esticado em 1920px), não um limite
 geral do app. Confirmado via CDP em viewport de 1440px: `.content`
 passou de 720px pra 1424px (largura real da janela).
 
+**v0.1.9 (reescrita arquitetural: dashboard de tela única)**: o usuário
+mandou um prompt bem detalhado e explícito ("Atue como um Arquiteto de
+Software...") proibindo bottom-nav/páginas/modais de troca de tela,
+exigindo um dashboard `100vh` sem rolagem de página, com as 5+ colunas
+sempre lado a lado (inclusive Obsidian/clima/livros que eu tinha
+acabado de adicionar como colunas extras na v0.1.7). Antes de executar,
+levantei os conflitos reais com decisões já tomadas na mesma conversa
+(mobile precisava de layout próprio — regra da v0.1.4 — e as 5 telas
+dedicadas de método iam encolher/perder função) e perguntei; o usuário
+confirmou que queria valendo pra tudo, inclusive celular, e aceitou
+encolher Kanban/Eisenhower/Pomodoro/Time-Boxing/Auditoria em widgets
+miniatura. Ver seção "Arquitetura de tela única" no topo deste arquivo
+pro estado resultante — é uma mudança grande o bastante pra merecer
+seção própria, não só uma entrada de histórico.
+
+Detalhe de implementação que valeu a pena registrar: `.wooden-dashboard`
+usa `overflow-x: auto` em vez de tentar espremer 7 colunas em 390px de
+largura de celular (o que ficaria ilegível) — ainda é "uma tela só,
+sem página nova, sem bottom-nav", só que alcançada arrastando pro
+lado em telas estreitas, em vez de rolagem vertical. Testado via CDP:
+`document.documentElement.scrollHeight === clientHeight` (zero scroll
+vertical de página) e `wooden-dashboard.scrollWidth > clientWidth` com
+`overflow-x: auto` (scroll horizontal funcionando).
+
+**Bug que eu mesmo introduzi e corrigi na mesma leva**: adicionei um
+listener de `change` **além** do de `click` já existente pro checkbox
+de tarefa, achando que precisava — só que isso disparava
+`task-toggle` duas vezes por clique (XP em dobro, duas chances de
+pato). O `click` sozinho já bastava (como sempre bastou nas versões
+anteriores). Pego antes de subir, via teste comparando XP antes/depois
+de um clique único (delta tinha que ser exatamente `xpValue`, não o
+dobro).
+
 ## Onde ficam as coisas
 
 ```
@@ -230,12 +318,12 @@ www/
 ├── index.html, manifest.json, service-worker.js
 ├── css/style.css      ← visual próprio (mascote, animações, janela de pergaminho), sem lib externa
 └── js/
-    ├── app.js          ← roteador hash (`route("/...")`) + todas as telas + ações delegadas (data-action)
+    ├── app.js          ← dashboard de tela única — 1 função `render()`, sem rotas; colunas + modal de Ajustes + ações delegadas (data-action)
     ├── data.js         ← UI_STRINGS, METHOD_CONFIGS (os 10 métodos), BADGE_CONFIGS, APP_VERSION
     ├── db.js           ← IndexedDB. STORES: tasks, projects, timeAuditLog, profile, gamification, ducks, books, obsidianHandle
-    ├── gamification.js ← cálculo de XP/nível/sequência, checagem de badge
+    ├── gamification.js ← cálculo de XP/nível/sequência/moedas, checagem de badge
     ├── mascot.js       ← mascote/patinhos/cena da fazenda (SVG pixel art desenhado à mão)
-    ├── methods.js      ← PomodoroTimer, TimeboxTimer, formatCountdown — únicos métodos com estado próprio
+    ├── methods.js      ← TimeboxTimer (timer de foco embutido), formatCountdown
     ├── notifications.js ← Notification API best-effort (limitação documentada no README)
     ├── weather.js      ← card de clima (geolocalização + Open-Meteo, cache 30min)
     ├── obsidian.js     ← ponte com cofre local via File System Access API (só desktop Chrome/Edge)

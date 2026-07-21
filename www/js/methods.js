@@ -1,8 +1,8 @@
-// methods.js — lógica funcional dos métodos que precisam de estado
-// próprio (Pomodoro, Time-Boxing, contagem regressiva). Os métodos que
-// são só filtro/agrupamento de tarefas (Eisenhower, Kanban, 1-3-5,
-// ABCD-Z, 80/20, Regra dos 2 Minutos) ficam direto no app.js, perto da
-// tela que os desenha.
+// methods.js — contagem regressiva + o timer de foco embutido no
+// rodapé da coluna Livros (v0.2.0: Pomodoro/Time-Boxing viraram um
+// timer único simples, sem tela própria; Eisenhower/Kanban/1-3-5/
+// ABCD-Z/80/20/Regra dos 2 Minutos são controles inline por tarefa,
+// direto em app.js).
 
 function formatCountdown(targetIso) {
   if (!targetIso) return null;
@@ -23,69 +23,7 @@ function formatCountdown(targetIso) {
   return { text: overdue ? `atrasado há ${text}` : `faltam ${text}`, overdue };
 }
 
-// ---------- Pomodoro ----------
-
-class PomodoroTimer {
-  constructor({ workMinutes = 25, breakMinutes = 5, longBreakMinutes = 15, cyclesBeforeLongBreak = 4, onTick, onPhaseComplete } = {}) {
-    this.workMinutes = workMinutes;
-    this.breakMinutes = breakMinutes;
-    this.longBreakMinutes = longBreakMinutes;
-    this.cyclesBeforeLongBreak = cyclesBeforeLongBreak;
-    this.onTick = onTick || (() => {});
-    this.onPhaseComplete = onPhaseComplete || (() => {});
-    this.phase = "work"; // work | break | longBreak
-    this.cycleCount = 0;
-    this.remainingMs = this.workMinutes * 60000;
-    this.interval = null;
-    this.running = false;
-  }
-
-  start() {
-    if (this.running) return;
-    this.running = true;
-    this._tickEndAt = Date.now() + this.remainingMs;
-    this.interval = setInterval(() => this._tick(), 250);
-  }
-
-  pause() {
-    this.running = false;
-    if (this.interval) clearInterval(this.interval);
-    this.remainingMs = Math.max(0, this._tickEndAt - Date.now());
-  }
-
-  reset() {
-    this.pause();
-    this.phase = "work";
-    this.cycleCount = 0;
-    this.remainingMs = this.workMinutes * 60000;
-    this.onTick(this.remainingMs, this.phase);
-  }
-
-  _tick() {
-    this.remainingMs = this._tickEndAt - Date.now();
-    if (this.remainingMs <= 0) {
-      this._advancePhase();
-      return;
-    }
-    this.onTick(this.remainingMs, this.phase);
-  }
-
-  _advancePhase() {
-    const finishedPhase = this.phase;
-    if (finishedPhase === "work") {
-      this.cycleCount += 1;
-      this.phase = this.cycleCount % this.cyclesBeforeLongBreak === 0 ? "longBreak" : "break";
-    } else {
-      this.phase = "work";
-    }
-    this.remainingMs = (this.phase === "work" ? this.workMinutes : this.phase === "break" ? this.breakMinutes : this.longBreakMinutes) * 60000;
-    this._tickEndAt = Date.now() + this.remainingMs;
-    this.onPhaseComplete(finishedPhase, this.phase);
-    this.onTick(this.remainingMs, this.phase);
-  }
-}
-
-// ---------- Time-Boxing (contagem regressiva simples de N minutos) ----------
+// ---------- Time-Boxing / timer de foco (contagem regressiva de N minutos) ----------
 
 class TimeboxTimer {
   constructor({ minutes, onTick, onComplete } = {}) {
@@ -123,4 +61,4 @@ class TimeboxTimer {
   }
 }
 
-window.PsyduckMethods = { formatCountdown, PomodoroTimer, TimeboxTimer };
+window.PsyduckMethods = { formatCountdown, TimeboxTimer };

@@ -122,6 +122,24 @@ async function writeTaskToggle(task) {
   await writable.close();
 }
 
+// Adiciona uma nova linha "- [ ] texto" no fim do arquivo escolhido —
+// usado pelo campo de adição rápida da coluna Tarefas, pra tarefa
+// criada no Psyduck também nascer no cofre do Obsidian.
+async function appendTaskLine(fileName, title) {
+  const handle = await getStoredHandle();
+  if (!handle) return;
+  if (!(await ensurePermission(handle, "readwrite"))) return;
+
+  const fileHandle = await handle.getFileHandle(fileName);
+  const file = await fileHandle.getFile();
+  const text = await file.text();
+  const newText = (text.endsWith("\n") || text === "" ? text : text + "\n") + `- [ ] ${title}\n`;
+
+  const writable = await fileHandle.createWritable();
+  await writable.write(newText);
+  await writable.close();
+}
+
 window.PsyduckObsidian = {
   isSupported,
   getStoredHandle,
@@ -130,4 +148,5 @@ window.PsyduckObsidian = {
   listMarkdownFiles,
   syncFromFile,
   writeTaskToggle,
+  appendTaskLine,
 };

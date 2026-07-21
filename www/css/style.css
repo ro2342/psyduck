@@ -1,13 +1,21 @@
-/* style.css — visual próprio do Psyduck: quente, arredondado, com
-   movimento. Nada de dashboard SaaS roxo-azul genérico. */
+/* style.css — Psyduck v0.2.0: dashboard de tela única (cozy game),
+   sem bottom-nav, sem páginas separadas. Tudo (tarefas, métodos,
+   clima, livros, humor) vive dentro das colunas de madeira, sempre
+   visível ao mesmo tempo — só a coluna que rola é que muda. */
 
 :root {
   --accent-color: #f6a821;
+  --accent-orange: #e67e22;
   --bg: #e7cf9a;
   --bg-elevated: #fffdf7;
+  --bg-wooden-frame: #3b2314;
+  --bg-column: #fdf6ec;
+  --card-bg: #ffffff;
   --text: #2c2116;
+  --text-main: #4a2e18;
   --text-soft: #6b5a3e;
   --border: #d9bd82;
+  --border-wood: #8c5a32;
   --warn-bg: #ffe4d6;
   --warn-text: #a63d1d;
   --radius: 20px;
@@ -41,14 +49,14 @@
 
 /* As cores da CENA (--scene-*) não mudam no tema escuro de propósito —
    a fazenda é sempre de dia, feito o mundo de um cozy game, não a UI
-   do app. Escurecer tudo por igual (como era antes) deixava sol,
-   colina e céu quase da mesma cor escura, virando uma mancha só —
-   exatamente o bug que o usuário reportou ("fundo verde escuro
-   chapado"). Só a UI ao redor (cards, texto, fundo da página) muda. */
+   do app. Só a UI ao redor (dashboard, texto, cards) muda. */
 :root[data-theme="dark"] {
   --bg: #241a10;
   --bg-elevated: #322820;
+  --bg-column: #3a2f22;
+  --card-bg: #4a3b2a;
   --text: #f5ecd9;
+  --text-main: #f0e4cf;
   --text-soft: #c9b891;
   --border: #453521;
   --warn-bg: #4a2416;
@@ -61,11 +69,24 @@
 html, body {
   margin: 0;
   padding: 0;
+  height: 100%;
   background: var(--bg);
   color: var(--text);
   font-family: -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
-  transition: background 0.3s ease, color 0.3s ease;
 }
+
+/* Dashboard de tela única: sem rolagem de página, tudo cabe em 100vh.
+   A única rolagem que existe é a HORIZONTAL do próprio dashboard (se
+   as colunas não couberem lado a lado) e a vertical DENTRO de cada
+   coluna — nunca a página inteira. */
+body {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+#app, .app-shell { height: 100%; display: flex; flex-direction: column; min-height: 0; }
 
 a { color: inherit; }
 
@@ -74,146 +95,16 @@ button, input, select, textarea {
   color: inherit;
 }
 
-/* ---------- shell ---------- */
-
-.page { display: block; }
-
-.content {
-  padding: 16px 16px 96px;
-  animation: fadeIn 0.25s ease;
-}
-
-.bottom-nav {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 20;
-  display: flex;
-  justify-content: space-around;
-  background: var(--bg-elevated);
-  border-top: 1px solid var(--border);
-  padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
-  box-shadow: 0 -4px 16px rgba(120, 90, 30, 0.08);
-}
-
-.bottom-nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  text-decoration: none;
-  color: var(--text-soft);
-  font-size: 0.68rem;
-  font-weight: 700;
-  padding: 4px 8px;
-  border-radius: 12px;
-  min-width: 56px;
-  transition: transform 0.15s ease, color 0.15s ease;
-}
-.bottom-nav-item .bottom-nav-icon { font-size: 1.3rem; line-height: 1; }
-.bottom-nav-item.active { color: var(--accent-color); transform: translateY(-3px); }
-.bottom-nav-item:active { transform: scale(0.92); }
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-h1 { font-size: 1.5rem; margin: 4px 0 16px; }
-h2 { font-size: 1.05rem; margin: 0 0 10px; }
-.hint { color: var(--text-soft); font-size: 0.9rem; }
-.empty { color: var(--text-soft); font-style: italic; }
-
-/* ---------- painéis genéricos ---------- */
-
-/* Painéis viram "notas presas no quadro de cortiça" — leve rotação
-   alternada + um pino no topo, em vez de card branco flutuando num
-   fundo cinza liso (referência: quadro de avisos de fazenda). */
-.panel {
-  position: relative;
-  background: var(--bg-elevated);
-  border-radius: 14px;
-  padding: 22px 18px 18px;
-  margin-bottom: 18px;
-  box-shadow: var(--shadow);
-  transform: rotate(var(--tilt, -0.6deg));
-}
-.panel:nth-of-type(even) { --tilt: 0.6deg; }
-.panel::before {
-  content: "";
-  position: absolute;
-  top: -7px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #ff8a7a, #c23b2a);
-  box-shadow: 0 2px 3px rgba(0,0,0,0.3);
-}
-.panel-warn { background: var(--warn-bg); color: var(--warn-text); }
-.panel-warn .task-title { color: var(--warn-text); }
-.panel-warn::before { background: radial-gradient(circle at 35% 35%, #ffd23f, #c9660a); }
-
-/* Elementos utilitários (formulário dentro de <details>, cabeçalhos)
-   não devem parecer nota pregada — sem pino/rotação. */
-details.panel { transform: none; }
-details.panel::before { display: none; }
-
-/* ---------- janela de menu (Ajustes/Métodos) ---------- */
-/* Moldura grossa de madeira + fundo pergaminho, pra parecer um menu
-   de jogo (tipo abrir o inventário no Stardew Valley) em vez de uma
-   página de configurações comum. Só usada em Ajustes e Métodos —
-   o resto do app continua com o visual de "nota pregada". */
-.window-frame {
-  background: #fdf6ea;
-  border: 6px solid var(--scene-trunk);
-  border-radius: 10px;
-  box-shadow: 0 10px 0 rgba(0,0,0,0.15), 0 10px 20px rgba(0,0,0,0.2);
-  overflow: hidden;
-  /* Só a JANELA de menu (Ajustes/Métodos) fica com largura confortável
-     de leitura num monitor grande — isso é escolha de design desse
-     componente específico, não um limite geral do app (o .content ao
-     redor usa a tela inteira, sem cap de largura tipo celular). */
-  max-width: 640px;
-  margin: 0 auto;
-}
-:root[data-theme="dark"] .window-frame { background: #3a2f22; }
-.window-title-bar {
-  background: var(--scene-trunk);
-  color: #fdf6ea;
-  font-weight: 800;
-  font-size: 1.1rem;
-  padding: 12px 18px;
-}
-.window-body { padding: 16px; color: #3a2a18; }
-:root[data-theme="dark"] .window-body { color: #f0e4cf; }
-.window-section {
-  padding: 14px 0;
-  border-bottom: 2px dashed var(--border-wood, #b98d54);
-}
-.window-section:last-child { border-bottom: none; }
-.window-section h2 { margin: 0 0 10px; font-size: 1rem; }
-
-.stack { display: flex; flex-direction: column; gap: 10px; }
-.field { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; color: var(--text-soft); }
-
-input, textarea, select {
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
-}
-textarea { min-height: 60px; resize: vertical; }
-.checkbox { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; }
+h1 { font-size: 1.3rem; margin: 4px 0 12px; }
+h2 { font-size: 1rem; margin: 0 0 8px; }
+.hint { color: var(--text-soft); font-size: 0.85rem; }
+.empty { color: var(--text-soft); font-style: italic; font-size: 0.85rem; }
 
 .btn {
   display: inline-block;
-  padding: 12px 20px;
-  border-radius: 14px;
-  border: none;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 2px solid var(--border-wood);
   background: var(--border);
   cursor: pointer;
   font-weight: 700;
@@ -222,60 +113,70 @@ textarea { min-height: 60px; resize: vertical; }
   transition: transform 0.12s ease;
 }
 .btn:active { transform: scale(0.96); }
-.btn-primary { background: var(--accent-color); color: #2c2116; }
+.btn-primary { background: var(--accent-orange); border-color: #a85210; color: #fff; }
 .btn-block { display: block; width: 100%; }
 
-/* ---------- cena/mascote ---------- */
+.stack { display: flex; flex-direction: column; gap: 8px; }
+.field { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: var(--text-soft); }
 
-.scene-hero {
+input, textarea, select {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-wood);
+  background: #fff;
+  color: var(--text-main);
+  font-size: 0.85rem;
+}
+textarea { min-height: 50px; resize: vertical; }
+.checkbox { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; }
+
+/* ---------- cena/mascote (topo, ~42vh) ---------- */
+
+.scene-container {
   position: relative;
   overflow: hidden;
-  width: 100%;
-  height: 44vh;
-  min-height: 220px;
-  max-height: 340px;
+  flex: 0 0 42vh;
+  height: 42vh;
   border-bottom: 4px solid var(--scene-lake-edge);
 }
-.farm-bg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
+.farm-bg { position: absolute; inset: 0; width: 100%; height: 100%; }
 .scene-foreground {
   position: absolute;
   inset: 0;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: 8%;
 }
-.mascot-wrap { max-width: 220px; width: 42%; animation: bob 3.5s ease-in-out infinite; filter: drop-shadow(0 8px 10px rgba(0,0,0,0.2)); }
+.mascot-wrap {
+  position: absolute;
+  left: 8%;
+  bottom: 4%;
+  width: 22%;
+  max-width: 200px;
+  animation: bob 3.5s ease-in-out infinite;
+  filter: drop-shadow(0 8px 10px rgba(0,0,0,0.2));
+}
 .mascot-svg { width: 100%; height: auto; }
 .scene-mood-badge {
   position: absolute;
-  top: 14px;
-  left: 14px;
+  top: 12px;
+  left: 12px;
   max-width: 55%;
   background: rgba(255,255,255,0.9);
   color: #2c2116;
   font-weight: 700;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   line-height: 1.3;
-  padding: 6px 10px;
+  padding: 5px 9px;
   border-radius: 10px;
 }
 .scene-duck-count {
   position: absolute;
-  top: 14px;
-  right: 14px;
+  top: 12px;
+  right: 56px;
   background: rgba(255,255,255,0.9);
   color: #2c2116;
   font-weight: 700;
-  font-size: 0.8rem;
-  padding: 6px 12px;
+  font-size: 0.75rem;
+  padding: 5px 11px;
   border-radius: 14px;
-  text-decoration: none;
 }
 
 .farm-bg, .duck-icon, .mascot-svg { shape-rendering: crispEdges; }
@@ -287,18 +188,6 @@ textarea { min-height: 60px; resize: vertical; }
 .mascot-wrap, .farm-duck { animation-timing-function: steps(1, jump-end); }
 .mascot-proud .mascot-svg { animation: none; }
 
-/* ---------- fazenda / patinhos colecionáveis ---------- */
-
-.farm-scene-wrap {
-  position: relative;
-  width: 100%;
-  height: 50vh;
-  min-height: 260px;
-  max-height: 420px;
-  overflow: hidden;
-  border-bottom: 4px solid var(--scene-lake-edge);
-}
-.farm-ducks { position: absolute; inset: 0; }
 .farm-duck {
   position: absolute;
   background: none;
@@ -309,31 +198,41 @@ textarea { min-height: 60px; resize: vertical; }
   transition: transform 0.15s ease;
 }
 .farm-duck:active { transform: scale(0.9); }
-.farm-empty {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.4);
-  font-weight: 600;
-  padding: 0 30px;
-  text-align: center;
-}
 .duck-icon { display: block; }
+
+/* botão de ajustes — único jeito de abrir o único modal permitido */
+.settings-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--border-wood);
+  background: rgba(255,255,255,0.9);
+  font-size: 1.1rem;
+  cursor: pointer;
+  z-index: 5;
+}
 
 .chip.rarity-comum { background: var(--border); }
 .chip.rarity-incomum { background: #d7ecff; color: #1a5a8a; }
 .chip.rarity-raro { background: linear-gradient(135deg, #ffd23f, #ff9f43); color: #4a2c00; }
 :root[data-theme="dark"] .chip.rarity-incomum { background: #1e3a52; color: #a8d8f0; }
+.chip {
+  background: var(--border);
+  padding: 2px 7px;
+  border-radius: 8px;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
 
-/* ---------- modal de patinho novo ---------- */
+/* ---------- modal de patinho novo / único modal (ajustes) ---------- */
 
-.duck-modal-overlay {
+.duck-modal-overlay, .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0,0,0,0.55);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -342,7 +241,7 @@ textarea { min-height: 60px; resize: vertical; }
   transition: opacity 0.25s ease;
   padding: 20px;
 }
-.duck-modal-overlay.show { opacity: 1; }
+.duck-modal-overlay.show, .modal-overlay.show { opacity: 1; }
 .duck-modal {
   background: var(--bg-elevated);
   border-radius: var(--radius);
@@ -359,186 +258,271 @@ textarea { min-height: 60px; resize: vertical; }
 .duck-modal-art { display: flex; justify-content: center; margin: 8px 0; }
 .duck-modal h2 { margin: 4px 0; }
 
-/* ---------- painel de 5 colunas (Início) ---------- */
-/* Referência do usuário: dashboard tipo Stardew Valley com colunas
-   Moedas/Lembretes/Tarefas/Fazenda/Destaque, rolável na horizontal em
-   telas estreitas (celular) e lado a lado em telas largas. */
-
-/* Um painel de madeira só (sem margem, sem sombra, sem borda
-   arredondada) — as colunas são divisórias finas dentro do MESMO
-   frame, não cards separados flutuando.
-
-   Mobile de verdade, não "desktop espremido": no celular vira uma
-   pilha vertical (cada seção ocupa a largura toda, rolagem normal de
-   página — nada de carrossel horizontal escondendo colunas). Só em
-   tela larga (≥720px, onde cabe de verdade) vira lado a lado, igual à
-   referência (que era captura de desktop). */
-.dash-board {
+/* Janela de menu (moldura de madeira + pergaminho) — reaproveitada só
+   pro modal único de Ajustes agora que não existem mais telas/rotas
+   separadas. */
+.window-frame {
+  background: #fdf6ea;
+  border: 6px solid var(--scene-trunk);
+  border-radius: 10px;
+  box-shadow: 0 14px 0 rgba(0,0,0,0.15), 0 14px 24px rgba(0,0,0,0.25);
+  overflow: hidden;
+  max-width: 480px;
+  width: 100%;
+  max-height: 85vh;
   display: flex;
   flex-direction: column;
+}
+:root[data-theme="dark"] .window-frame { background: #3a2f22; }
+.window-title-bar {
   background: var(--scene-trunk);
-  padding: 3px;
-}
-.dash-col {
-  background: var(--bg-elevated);
-  border-bottom: 2px solid var(--scene-trunk);
-  padding: 10px 10px 14px;
-}
-.dash-col:last-child { border-bottom: none; }
-.dash-col h3 {
-  margin: 0 0 8px;
-  font-size: 0.72rem;
+  color: #fdf6ea;
   font-weight: 800;
+  font-size: 1.05rem;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.window-close-btn { background: none; border: none; color: #fdf6ea; font-size: 1.2rem; cursor: pointer; }
+.window-body { padding: 16px; color: #3a2a18; overflow-y: auto; }
+:root[data-theme="dark"] .window-body { color: #f0e4cf; }
+.window-section { padding: 12px 0; border-bottom: 2px dashed var(--border-wood); }
+.window-section:last-child { border-bottom: none; }
+.window-section h2 { margin: 0 0 8px; font-size: 0.95rem; }
+
+/* ---------- dashboard de madeira (colunas, ~58vh) ---------- */
+
+.wooden-dashboard {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  background: var(--bg-wooden-frame);
+  padding: 10px;
+  overflow-x: auto;
+}
+
+.column {
+  background: var(--bg-column);
+  border: 3px solid var(--border-wood);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  min-width: 165px;
+  color: var(--text-main);
+}
+/* Larguras assimétricas — colunas com mais conteúdo (Tarefas, Livros,
+   Destaque) ganham mais espaço que Moedas/Fazenda. Em tela estreita, o
+   min-width acima garante legibilidade e o .wooden-dashboard rola na
+   horizontal em vez de espremer texto até ficar ilegível — ainda uma
+   tela única, sem bottom-nav/página nova, só alcançada com um gesto de
+   arrastar pro lado. */
+.col-moedas { flex: 0.9 1 0; }
+.col-lembretes { flex: 1.3 1 0; }
+.col-tarefas { flex: 2.1 1 0; min-width: 220px; }
+.col-fazenda { flex: 1 1 0; }
+.col-livros { flex: 1.7 1 0; min-width: 200px; }
+.col-clima { flex: 1.2 1 0; }
+.col-destaque { flex: 2.2 1 0; min-width: 230px; }
+
+.column-header {
+  background: var(--border-wood);
+  color: #fff8ec;
+  font-weight: 800;
+  font-size: 0.7rem;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.column-header .info-icon { cursor: help; opacity: 0.85; font-size: 0.85em; }
+
+.column-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 10px;
+  min-height: 0;
+}
+.column-content::-webkit-scrollbar { width: 7px; }
+.column-content::-webkit-scrollbar-thumb { background: var(--border-wood); border-radius: 4px; }
+.column-content::-webkit-scrollbar-track { background: var(--border); }
+
+.column-footer {
+  border-top: 2px solid var(--border-wood);
+  padding: 6px 10px;
+  font-size: 0.68rem;
   color: var(--text-soft);
-  border-bottom: 2px solid var(--border);
-  padding-bottom: 6px;
+  background: rgba(140,90,50,0.06);
 }
+
+/* cartões dentro das colunas */
+.ui-card {
+  background: var(--card-bg);
+  border: 2px solid var(--border-wood);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  box-shadow: 0 3px 0 rgba(140, 90, 50, 0.2);
+}
+
+.quick-add-row {
+  display: flex;
+  gap: 4px;
+  padding: 0 2px 6px;
+}
+.quick-add-row input {
+  flex: 1;
+  font-size: 0.78rem;
+  padding: 6px 8px;
+}
+
+/* moedas */
 .dash-level { font-weight: 800; margin: 0 0 6px; font-size: 0.85rem; }
-.dash-streak { color: var(--text-soft); font-size: 0.78rem; margin-top: 8px; }
-.coin-stack { margin-top: 8px; }
-.coin-row { font-size: 1rem; letter-spacing: 1px; line-height: 1.5; }
+.dash-streak { color: var(--text-soft); font-size: 0.72rem; margin-top: 8px; }
+.coin-grid { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 6px; }
+.coin-icon { width: 16px; height: 16px; flex: 0 0 auto; }
+.xp-bar { height: 7px; background: var(--border); border-radius: 6px; overflow: hidden; margin: 6px 0 4px; }
+.xp-fill { height: 100%; background: var(--accent-orange); transition: width 0.4s ease; }
 
-.mini-task-card {
+/* lembretes */
+.reminder-card {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 0;
+  gap: 6px;
+  padding: 6px 0;
   border-bottom: 1px solid var(--border);
-  font-size: 0.85rem;
+  font-size: 0.78rem;
 }
-.mini-task-card:last-child { border-bottom: none; }
-.mini-icon {
-  width: 24px;
-  height: 24px;
-  min-width: 24px;
+.reminder-card:last-child { border-bottom: none; }
+.reminder-icon {
+  width: 22px; height: 22px; min-width: 22px;
   border-radius: 50%;
-  background: var(--accent-color);
-  color: #2c2116;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: 0.75rem;
+  background: var(--border-wood);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 0.68rem;
 }
-.mini-title { flex: 1; }
-.mini-stars { color: var(--accent-color); font-size: 0.7rem; }
+.reminder-title { flex: 1; }
+.reminder-stars { color: var(--accent-orange); font-size: 0.65rem; }
 
-.mini-check-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+/* tarefas (compactas, com controles inline de todos os métodos) */
+.task-row-mini {
   padding: 7px 0;
-  font-size: 0.85rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.78rem;
+}
+.task-row-mini:last-child { border-bottom: none; }
+.task-row-mini.done .task-mini-title { text-decoration: line-through; color: #27ae60; }
+.task-mini-top { display: flex; align-items: center; gap: 6px; }
+.task-mini-title { flex: 1; }
+.task-mini-controls {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin: 4px 0 0 24px;
+}
+.mini-pill {
+  border: 1px solid var(--border-wood);
+  background: #fff;
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: 0.62rem;
   cursor: pointer;
-}
-
-.dash-see-all {
-  display: inline-block;
-  margin-top: 10px;
-  font-size: 0.8rem;
   font-weight: 700;
-  text-decoration: none;
-  color: var(--accent-color);
+  color: var(--text-soft);
 }
+.mini-pill.active { background: var(--accent-orange); color: #fff; border-color: #a85210; }
+.mini-eisenhower-overview {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+  font-size: 0.6rem;
+  text-align: center;
+  margin-top: 4px;
+}
+.mini-eisenhower-overview span { background: var(--border); border-radius: 4px; padding: 2px; }
 
-.dash-farm-preview { display: flex; gap: 4px; align-items: flex-end; min-height: 30px; }
-.dash-farm-count { font-weight: 700; margin: 8px 0 0; }
+/* fazenda (mini) */
+.dash-farm-preview { display: flex; gap: 4px; align-items: flex-end; min-height: 30px; flex-wrap: wrap; }
+.dash-farm-count { font-weight: 700; margin: 8px 0 0; font-size: 0.78rem; }
 
-/* ---------- livros ---------- */
-
+/* livros */
 .book-card {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
-  padding: 8px 0;
+  padding: 7px 0;
   border-bottom: 1px solid var(--border);
 }
 .book-card:last-of-type { border-bottom: none; }
-.book-cover {
-  width: 40px;
-  height: 56px;
-  min-width: 40px;
-  object-fit: cover;
-  border-radius: 4px;
-  background: var(--border);
-}
-.book-cover-placeholder { display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+.book-cover { width: 34px; height: 48px; min-width: 34px; object-fit: cover; border-radius: 4px; background: var(--border); }
+.book-cover-placeholder { display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
 .book-info { display: flex; flex-direction: column; gap: 2px; flex: 1; }
-.book-title { font-weight: 700; font-size: 0.85rem; }
-.btn-mini {
+.book-title { font-weight: 700; font-size: 0.76rem; }
+.reward-btn {
   align-self: flex-start;
   border: none;
-  background: var(--accent-color);
-  color: #2c2116;
+  background: var(--accent-orange);
+  color: #fff;
   font-weight: 700;
-  font-size: 0.7rem;
-  padding: 4px 10px;
-  border-radius: 8px;
+  font-size: 0.65rem;
+  padding: 3px 8px;
+  border-radius: 7px;
   cursor: pointer;
   margin-top: 2px;
 }
+.inline-method-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.inline-method-bar button {
+  border: 1px solid var(--border-wood);
+  background: #fff;
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 0.68rem;
+  cursor: pointer;
+  font-weight: 700;
+}
+.timer-display-mini { font-variant-numeric: tabular-nums; font-weight: 800; margin-left: 4px; }
 
-/* ---------- clima ---------- */
+/* clima */
+.weather-sparkline { width: 100%; height: 26px; margin: 4px 0; }
 
-.weather-sparkline { width: 100%; height: 32px; margin: 6px 0; }
-
-.featured-check-row { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-.featured-check-row input { width: 20px; height: 20px; }
-.featured-title { font-weight: 700; font-size: 1.05rem; }
-.featured-notes { color: var(--text-soft); font-size: 0.85rem; margin: 8px 0; }
-
-.featured-check-row { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-.featured-check-row input { width: 20px; height: 20px; }
-.featured-title { font-weight: 700; font-size: 1.05rem; }
-.featured-notes { color: var(--text-soft); font-size: 0.85rem; margin: 8px 0; }
-
-.mood-picker { display: flex; gap: 6px; margin: 10px 0; }
+/* destaque / diário */
+.journal-card .journal-head { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.journal-card .journal-head input[type="checkbox"] { margin-left: auto; width: 18px; height: 18px; }
+.featured-title { font-weight: 700; font-size: 0.85rem; }
+.featured-notes { color: var(--text-soft); font-size: 0.75rem; margin: 6px 0; }
+.mood-picker { display: flex; gap: 4px; margin: 8px 0; }
 .mood-btn {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: 8px 4px;
-  border-radius: 10px;
+  gap: 1px;
+  padding: 5px 2px;
+  border-radius: 8px;
   border: 2px solid transparent;
-  background: var(--bg);
+  background: #fff;
   cursor: pointer;
-  font-size: 1.2rem;
+  font-size: 1rem;
 }
-.mood-btn .mood-label { font-size: 0.62rem; font-weight: 700; color: var(--text-soft); }
-.mood-btn.selected { border-color: var(--accent-color); background: var(--warn-bg); }
-.reflection-note {
-  width: 100%;
-  min-height: 50px;
-  margin-top: 8px;
-}
-
-@media (min-width: 720px) {
-  .dash-board { flex-direction: row; }
-  .dash-col {
-    flex: 1 1 0;
-    border-bottom: none;
-    border-right: 2px solid var(--scene-trunk);
-  }
-  .dash-col:last-child { border-right: none; }
-  .dash-featured { flex: 1.4 1 0; }
-}
-
-.xp-bar {
-  height: 8px;
-  background: var(--border);
-  border-radius: 6px;
-  overflow: hidden;
-  margin: 8px 0 4px;
-}
-.xp-fill {
-  height: 100%;
-  background: var(--accent-color);
-  transition: width 0.4s ease;
-}
+.mood-btn .mood-label { font-size: 0.55rem; font-weight: 700; color: var(--text-soft); }
+.mood-btn.selected { border-color: var(--accent-orange); background: var(--warn-bg); }
+.reflection-note { width: 100%; min-height: 40px; margin-top: 6px; font-size: 0.75rem; }
+.time-audit-mini { display: flex; gap: 4px; margin-top: 4px; }
+.time-audit-mini input { font-size: 0.7rem; padding: 4px 6px; }
+.time-audit-mini input[name="activity"] { flex: 1; }
+.time-audit-mini input[name="minutes"] { width: 50px; }
 
 /* ---------- toast ---------- */
 
@@ -558,163 +542,3 @@ textarea { min-height: 60px; resize: vertical; }
   box-shadow: var(--shadow);
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
-
-/* ---------- tarefas ---------- */
-
-.task-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border);
-}
-.task-row:last-child { border-bottom: none; }
-.task-row.done .task-title { text-decoration: line-through; color: var(--text-soft); }
-
-.check {
-  width: 28px;
-  height: 28px;
-  min-width: 28px;
-  border-radius: 50%;
-  border: 2px solid var(--accent-color);
-  background: transparent;
-  cursor: pointer;
-  font-weight: 800;
-  color: var(--accent-color);
-}
-.task-row.done .check { background: var(--accent-color); color: #2c2116; }
-
-.task-body { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-.task-title { font-weight: 600; }
-.task-meta { display: flex; gap: 6px; flex-wrap: wrap; font-size: 0.75rem; }
-
-.chip {
-  background: var(--border);
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-.chip-warn { background: var(--warn-bg); color: var(--warn-text); }
-.chip-link {
-  padding: 6px 12px;
-  border-radius: 12px;
-  background: var(--bg-elevated);
-  text-decoration: none;
-  font-size: 0.85rem;
-  font-weight: 600;
-  box-shadow: var(--shadow);
-}
-.chip-link.active { background: var(--accent-color); color: #2c2116; }
-
-.filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
-
-.icon-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1rem;
-  opacity: 0.6;
-}
-.icon-btn:hover { opacity: 1; }
-
-.method-short {
-  font-style: italic;
-  color: var(--text-soft);
-}
-
-/* ---------- kanban ---------- */
-
-.kanban-board {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-}
-.kanban-column {
-  background: var(--bg-elevated);
-  border-radius: var(--radius);
-  padding: 12px;
-  box-shadow: var(--shadow);
-  min-height: 120px;
-}
-.kanban-column h2 { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; }
-.count { background: var(--border); border-radius: 8px; padding: 1px 8px; font-size: 0.75rem; }
-.kanban-card {
-  background: var(--bg);
-  border-radius: 12px;
-  padding: 10px;
-  margin-bottom: 8px;
-  font-size: 0.85rem;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.kanban-actions { display: flex; gap: 6px; justify-content: flex-end; }
-.kanban-actions button {
-  border: none;
-  background: var(--border);
-  border-radius: 8px;
-  padding: 4px 10px;
-  cursor: pointer;
-}
-
-@media (max-width: 560px) {
-  .kanban-board { grid-template-columns: 1fr; }
-}
-
-/* ---------- eisenhower ---------- */
-
-.eisenhower-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-.eisenhower-quadrant {
-  border-radius: var(--radius);
-  padding: 14px;
-  box-shadow: var(--shadow);
-  min-height: 100px;
-}
-.q-urgent-important { background: var(--warn-bg); }
-.q-not-urgent-important { background: #fff3d6; }
-.q-urgent-not-important { background: #e9f2ff; }
-.q-neither { background: var(--bg-elevated); }
-:root[data-theme="dark"] .q-not-urgent-important { background: #3a2f18; }
-:root[data-theme="dark"] .q-urgent-not-important { background: #1c2a3a; }
-
-.eisenhower-quadrant h3 { margin: 0 0 4px; font-size: 0.9rem; }
-.mini-card {
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 10px;
-  padding: 6px 10px;
-  margin-top: 6px;
-  font-size: 0.85rem;
-}
-:root[data-theme="dark"] .mini-card { background: rgba(0, 0, 0, 0.25); }
-
-.quadrant-pick { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-.quadrant-pick button {
-  border: none;
-  background: var(--border);
-  border-radius: 10px;
-  padding: 6px 10px;
-  font-size: 0.75rem;
-  cursor: pointer;
-}
-
-@media (max-width: 480px) {
-  .eisenhower-grid { grid-template-columns: 1fr; }
-}
-
-/* ---------- timers ---------- */
-
-.timer-panel { text-align: center; }
-.phase-label { display: block; font-weight: 700; color: var(--text-soft); margin-bottom: 4px; }
-.timer-display {
-  display: block;
-  font-size: 3.2rem;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  color: var(--accent-color);
-}
-.timer-controls { display: flex; gap: 10px; justify-content: center; margin-top: 14px; }

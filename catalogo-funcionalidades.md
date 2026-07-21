@@ -12,6 +12,14 @@ Cada item tem:
   dos 10 métodos clássicos de produtividade).
 - **Onde entra no app**: tela ou mecanismo concreto.
 
+**Atualização v0.1.9**: o app virou um dashboard de tela única (sem
+páginas/bottom-nav — ver `CLAUDE.md`). Vários métodos que tinham tela
+própria (Kanban, Eisenhower, Pomodoro, Time-Boxing, Auditoria de Tempo)
+viraram controles em miniatura dentro das colunas — as entradas abaixo
+descrevem a versão original em tela cheia; onde isso mudou, o texto
+"Onde entra no app" foi atualizado, mas o histórico da tela cheia fica
+registrado no `CLAUDE.md`.
+
 ## 1. Os 10 métodos de produtividade (todos ⭐ na v0.1.0)
 
 ### ⭐ Time Blocking

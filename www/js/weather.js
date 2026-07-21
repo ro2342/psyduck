@@ -76,23 +76,27 @@ async function renderWeatherColumn() {
   const coords = await getStoredCoords();
   if (!coords) {
     return `
-      <section class="dash-col">
-        <h3>Clima</h3>
-        <p class="empty">Sem localização ainda.</p>
-        <button class="btn btn-primary" onclick="window.PsyduckWeather.requestLocation().then(() => render())">Usar minha localização</button>
+      <section class="column col-clima">
+        <div class="column-header">Clima</div>
+        <div class="column-content">
+          <p class="empty">Sem localização ainda.</p>
+          <button class="btn btn-primary" onclick="window.PsyduckWeather.requestLocation().then(() => render())">Usar localização</button>
+        </div>
       </section>
     `;
   }
   const data = await getWeatherData();
   if (!data) {
-    return `<section class="dash-col"><h3>Clima</h3><p class="empty">Não consegui buscar agora.</p></section>`;
+    return `<section class="column col-clima"><div class="column-header">Clima</div><div class="column-content"><p class="empty">Não consegui buscar agora.</p></div></section>`;
   }
   return `
-    <section class="dash-col">
-      <h3>Clima</h3>
-      <p class="dash-level">${Math.round(data.currentTemp)}°C</p>
-      ${renderSparkline(data.hourlyTemps)}
-      <p class="hint">Próximas horas</p>
+    <section class="column col-clima">
+      <div class="column-header">Clima</div>
+      <div class="column-content">
+        <p class="dash-level">${Math.round(data.currentTemp)}°C</p>
+        ${renderSparkline(data.hourlyTemps)}
+        <p class="hint">Próximas horas</p>
+      </div>
     </section>
   `;
 }

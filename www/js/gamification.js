@@ -12,6 +12,12 @@ function xpIntoCurrentLevel(xp) {
   return xp % step;
 }
 
+// "Moedas" exibidas na coluna Moedas do dashboard — 1 moeda a cada
+// 10 XP, formato mais lúdico que mostrar o número de XP cru.
+function coinCount(xp) {
+  return Math.floor(xp / 10);
+}
+
 function todayKey(date = new Date()) {
   return date.toISOString().slice(0, 10);
 }
@@ -109,6 +115,10 @@ async function onTaskCompleted(xpValue, taskTitle) {
   return { state, leveledUp, newBadges, newDuck };
 }
 
+// Chamado quando o timer de foco embutido (rodapé da coluna Livros,
+// v0.2.0 — substituiu a tela própria de Pomodoro/Time-Boxing) termina
+// uma sessão. Nome da função ficou do jeito antigo por compatibilidade
+// de leitura do histórico, mas hoje cobre qualquer sessão de foco.
 async function onPomodoroCompleted() {
   const db = window.PsyduckDB;
   let state = await db.getGamificationState();
@@ -126,7 +136,7 @@ async function onPomodoroCompleted() {
   await db.saveGamificationState(state);
 
   const newDuck =
-    (await maybeAwardDuck({ dropChance: 0.2, guaranteed: leveledUp, sourceLabel: "um ciclo de Pomodoro" })) ||
+    (await maybeAwardDuck({ dropChance: 0.2, guaranteed: leveledUp, sourceLabel: "uma sessão de foco" })) ||
     (newBadges.length ? await maybeAwardDuck({ guaranteed: true, sourceLabel: `conquistando "${newBadges[0].name}"` }) : null);
 
   return { state, leveledUp, newBadges, newDuck };
@@ -135,6 +145,7 @@ async function onPomodoroCompleted() {
 window.PsyduckGamification = {
   levelForXp,
   xpIntoCurrentLevel,
+  coinCount,
   onTaskCompleted,
   onPomodoroCompleted,
 };
