@@ -14,7 +14,7 @@ por Device Authorization Grant (UWP/Win10 Mobile) e PKCE (PWA), versão
 sempre bumped, push imediato após cada leva validada, Actions
 acompanhado até o fim.
 
-## Estado atual (v0.1.7)
+## Estado atual (v0.1.8)
 
 Só existe o PWA (`www/`), rodando 100% local — **sem sync, sem app
 nativo, sem integrações externas ainda**. Ver roadmap completo abaixo.
@@ -207,6 +207,21 @@ depois de 3 decisões técnicas concretas com o usuário:
 funcionalidades que não foram pedidas na conversa, perguntar antes de
 descartar — pode ser o usuário citando/reencaminhando algo que ele
 mesmo pediu em outro lugar, não necessariamente ruído de terceiros.
+
+**v0.1.8 (bug: `.content` limitava tudo a largura de celular)**:
+`.content { max-width: 720px; margin: 0 auto; }` capava o app inteiro
+numa coluna de celular mesmo em monitor grande — mesmo depois da v0.1.4
+ter dado tratamento próprio pro dashboard em telas largas
+(`@media (min-width: 720px)`), esse container pai continuava
+estreitando tudo por baixo, incluindo a própria media query (nunca
+tinha espaço de verdade pra usar). Removido o `max-width`/`margin:
+0 auto` de `.content` — o conteúdo agora ocupa a tela inteira, sem cap
+nenhum. Única exceção deliberada: `.window-frame` (janela de menu de
+Ajustes/Métodos) ganhou seu próprio `max-width: 640px; margin: 0 auto;`
+— isso é decisão de design **daquele componente específico** (menu
+centralizado é mais legível que esticado em 1920px), não um limite
+geral do app. Confirmado via CDP em viewport de 1440px: `.content`
+passou de 720px pra 1424px (largura real da janela).
 
 ## Onde ficam as coisas
 

@@ -79,8 +79,6 @@ button, input, select, textarea {
 .page { display: block; }
 
 .content {
-  max-width: 720px;
-  margin: 0 auto;
   padding: 16px 16px 96px;
   animation: fadeIn 0.25s ease;
 }
@@ -174,6 +172,12 @@ details.panel::before { display: none; }
   border-radius: 10px;
   box-shadow: 0 10px 0 rgba(0,0,0,0.15), 0 10px 20px rgba(0,0,0,0.2);
   overflow: hidden;
+  /* Só a JANELA de menu (Ajustes/Métodos) fica com largura confortável
+     de leitura num monitor grande — isso é escolha de design desse
+     componente específico, não um limite geral do app (o .content ao
+     redor usa a tela inteira, sem cap de largura tipo celular). */
+  max-width: 640px;
+  margin: 0 auto;
 }
 :root[data-theme="dark"] .window-frame { background: #3a2f22; }
 .window-title-bar {
