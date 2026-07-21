@@ -5,7 +5,7 @@
 // nasce pronto pra quando o Firestore entrar na v0.2.
 
 const DB_NAME = "psyduck";
-const DB_VERSION = 1;
+const DB_VERSION = 2; // v2: adiciona STORES.ducks (família da fazenda)
 
 const STORES = {
   tasks: "tasks", // { id, title, notes, projectId, dueAt, remindAt, priorityLetter, eisenhowerQuadrant, kanbanColumn, oneThreeFiveSlot, oneThreeFiveDate, isTwoMinuteTask, paretoHighImpact, timeboxMinutes, pomodoroSessionsLogged, xpValue, done, doneAt, deleted, updatedAt }
@@ -13,6 +13,7 @@ const STORES = {
   timeAuditLog: "timeAuditLog", // { id, activity, minutes, loggedAt, updatedAt }
   profile: "profile", // { key, value } — settings key/value, como no theartistsway
   gamification: "gamification", // { key: 'state', xp, level, streak, lastActiveDate, tasksCompleted, pomodorosCompleted, badges: [], updatedAt }
+  ducks: "ducks", // { id, variantId, name, obtainedAt, sourceLabel, updatedAt } — a família de Psyducks da fazenda
 };
 
 let dbInstance = null;
@@ -28,6 +29,7 @@ function openDB() {
       if (!db.objectStoreNames.contains(STORES.timeAuditLog)) db.createObjectStore(STORES.timeAuditLog, { keyPath: "id" });
       if (!db.objectStoreNames.contains(STORES.profile)) db.createObjectStore(STORES.profile, { keyPath: "key" });
       if (!db.objectStoreNames.contains(STORES.gamification)) db.createObjectStore(STORES.gamification, { keyPath: "key" });
+      if (!db.objectStoreNames.contains(STORES.ducks)) db.createObjectStore(STORES.ducks, { keyPath: "id" });
     };
     req.onsuccess = () => {
       dbInstance = req.result;
@@ -219,6 +221,27 @@ async function saveGamificationState(state) {
   return state;
 }
 
+// ---------- família de Psyducks (fazenda) ----------
+
+async function listDucks() {
+  const rows = await dbGetAll(STORES.ducks);
+  return rows.sort((a, b) => new Date(a.obtainedAt) - new Date(b.obtainedAt));
+}
+
+async function addDuck(variantId, name, sourceLabel) {
+  const duck = {
+    id: uid(),
+    variantId,
+    name,
+    sourceLabel,
+    obtainedAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  await dbPut(STORES.ducks, duck);
+  notifyChange();
+  return duck;
+}
+
 window.PsyduckDB = {
   STORES,
   dbGet,
@@ -238,4 +261,6 @@ window.PsyduckDB = {
   setSetting,
   getGamificationState,
   saveGamificationState,
+  listDucks,
+  addDuck,
 };

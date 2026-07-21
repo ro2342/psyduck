@@ -79,6 +79,15 @@ humor muda com o estado (confuso por padrão, preocupado com tarefa
 atrasada, feliz com sequência boa, orgulhoso ao subir de nível). **Onde
 entra**: ⭐ `mascot.js`, SVG próprio (evita "cara de app feito por IA").
 
+### ⭐ Família de Psyducks na fazenda (v0.1.1)
+**O que é**: pedido do usuário — colecionar patinhos tipo Pokémon,
+morando numa fazenda com lago. **Onde entra**: `STORES.ducks`,
+`DUCK_VARIANTS`/`DUCK_NAME_POOL` em `data.js`, sorteio ponderado por
+raridade em `gamification.js` (20% de chance por tarefa concluída,
+garantido em level-up/badge novo), tela `#/farm` com cena do lago
+(`renderFarmBackgroundSvg`) e os patos espalhados
+(`renderDuckIcon`), modal de celebração ao ganhar um novo.
+
 ### Level-up com celebração visual
 **O que é**: microanimação/confete ao subir de nível. **Onde entra**:
 ⭐ versão simples via toast (`flashToast`) na v0.1.0; confete/partícula

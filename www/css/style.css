@@ -12,6 +12,17 @@
   --warn-text: #a63d1d;
   --radius: 20px;
   --shadow: 0 6px 20px rgba(120, 90, 30, 0.12);
+  --scene-sky-top: #a8d8f0;
+  --scene-sky-bottom: #fce7b8;
+  --scene-sun: #ffd23f;
+  --scene-hill-far: #bfe3b0;
+  --scene-hill-near: #93cf8a;
+  --scene-barn: #d9695a;
+  --scene-barn-roof: #7a3b30;
+  --scene-barn-door: #5c2a22;
+  --scene-lake: #7cc3d8;
+  --scene-lake-edge: #ffffff;
+  --scene-reed: #5c8a4a;
   font-size: 16px;
 }
 
@@ -24,6 +35,17 @@
   --warn-bg: #4a2416;
   --warn-text: #ffb08a;
   --shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  --scene-sky-top: #2b3350;
+  --scene-sky-bottom: #55406a;
+  --scene-sun: #f0c04a;
+  --scene-hill-far: #2f4a38;
+  --scene-hill-near: #223a29;
+  --scene-barn: #8a453a;
+  --scene-barn-roof: #4a241d;
+  --scene-barn-door: #2e1712;
+  --scene-lake: #2a5570;
+  --scene-lake-edge: #7fb8d6;
+  --scene-reed: #3a5c30;
 }
 
 * { box-sizing: border-box; }
@@ -46,87 +68,44 @@ button, input, select, textarea {
 
 /* ---------- shell ---------- */
 
-.topbar {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 18px;
-  background: var(--bg-elevated);
-  border-bottom: 1px solid var(--border);
-}
-
-.hamburger {
-  background: var(--accent-color);
-  color: #2c2116;
-  border: none;
-  width: 42px;
-  height: 42px;
-  border-radius: 14px;
-  font-size: 20px;
-  cursor: pointer;
-  box-shadow: var(--shadow);
-  transition: transform 0.15s ease;
-}
-.hamburger:active { transform: scale(0.92); }
-
-.brand {
-  font-size: 1.25rem;
-  font-weight: 800;
-}
-
-.side-nav {
-  position: fixed;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  width: 260px;
-  background: var(--bg-elevated);
-  box-shadow: var(--shadow);
-  transform: translateX(-100%);
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-  z-index: 40;
-  padding: 80px 16px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  overflow-y: auto;
-}
-.side-nav.open { transform: translateX(0); }
-
-.nav-link {
-  padding: 12px 14px;
-  border-radius: 14px;
-  text-decoration: none;
-  font-weight: 600;
-  color: var(--text);
-}
-.nav-link.active { background: var(--accent-color); color: #2c2116; }
-.nav-link:hover { background: var(--border); }
-
-.nav-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.3);
-  z-index: 30;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.25s ease;
-}
-.side-nav.open ~ .nav-overlay,
-.side-nav.open + .nav-overlay {
-  opacity: 1;
-  pointer-events: auto;
-}
-
 .content {
   max-width: 720px;
   margin: 0 auto;
-  padding: 20px 16px 80px;
+  padding: 16px 16px 96px;
   animation: fadeIn 0.25s ease;
 }
+
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: space-around;
+  background: var(--bg-elevated);
+  border-top: 1px solid var(--border);
+  padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+  box-shadow: 0 -4px 16px rgba(120, 90, 30, 0.08);
+}
+
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-decoration: none;
+  color: var(--text-soft);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 12px;
+  min-width: 56px;
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+.bottom-nav-item .bottom-nav-icon { font-size: 1.3rem; line-height: 1; }
+.bottom-nav-item.active { color: var(--accent-color); transform: translateY(-3px); }
+.bottom-nav-item:active { transform: scale(0.92); }
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(6px); }
@@ -179,21 +158,129 @@ textarea { min-height: 60px; resize: vertical; }
 .btn-primary { background: var(--accent-color); color: #2c2116; }
 .btn-block { display: block; width: 100%; }
 
-/* ---------- mascote ---------- */
+/* ---------- cena/mascote ---------- */
 
-.hero-card {
-  text-align: center;
-  padding: 12px 0 4px;
+.scene-hero {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  height: 220px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
 }
-.mascot-wrap { max-width: 220px; margin: 0 auto; animation: bob 3.5s ease-in-out infinite; }
+.farm-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.scene-foreground {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 6px;
+}
+.mascot-wrap { max-width: 190px; width: 60%; animation: bob 3.5s ease-in-out infinite; filter: drop-shadow(0 8px 10px rgba(0,0,0,0.15)); }
 .mascot-svg { width: 100%; height: auto; }
-.mascot-caption { color: var(--text-soft); font-weight: 600; margin-top: 8px; }
+.mascot-caption {
+  position: relative;
+  text-align: center;
+  color: var(--text-soft);
+  font-weight: 700;
+  margin: 8px 0 16px;
+}
+.scene-duck-count {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(255,255,255,0.85);
+  color: #2c2116;
+  font-weight: 700;
+  font-size: 0.75rem;
+  padding: 5px 10px;
+  border-radius: 12px;
+  text-decoration: none;
+  box-shadow: var(--shadow);
+}
 
 @keyframes bob {
   0%, 100% { transform: translateY(0) rotate(0deg); }
   50% { transform: translateY(-8px) rotate(-1.5deg); }
 }
 .mascot-proud .mascot-svg { animation: none; }
+
+/* ---------- fazenda / patinhos colecionáveis ---------- */
+
+.farm-scene-wrap {
+  position: relative;
+  height: 320px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+}
+.farm-ducks { position: absolute; inset: 0; }
+.farm-duck {
+  position: absolute;
+  background: none;
+  border: none;
+  cursor: pointer;
+  animation: bob 4s ease-in-out infinite;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.18));
+  transition: transform 0.15s ease;
+}
+.farm-duck:active { transform: scale(0.9); }
+.farm-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  font-weight: 600;
+  padding: 0 30px;
+  text-align: center;
+}
+.duck-icon { display: block; }
+
+.chip.rarity-comum { background: var(--border); }
+.chip.rarity-incomum { background: #d7ecff; color: #1a5a8a; }
+.chip.rarity-raro { background: linear-gradient(135deg, #ffd23f, #ff9f43); color: #4a2c00; }
+:root[data-theme="dark"] .chip.rarity-incomum { background: #1e3a52; color: #a8d8f0; }
+
+/* ---------- modal de patinho novo ---------- */
+
+.duck-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 90;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  padding: 20px;
+}
+.duck-modal-overlay.show { opacity: 1; }
+.duck-modal {
+  background: var(--bg-elevated);
+  border-radius: var(--radius);
+  padding: 24px;
+  text-align: center;
+  max-width: 320px;
+  width: 100%;
+  transform: scale(0.85) translateY(10px);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: var(--shadow);
+}
+.duck-modal-overlay.show .duck-modal { transform: scale(1) translateY(0); }
+.duck-modal-kicker { font-weight: 800; color: var(--accent-color); margin: 0 0 4px; }
+.duck-modal-art { display: flex; justify-content: center; margin: 8px 0; }
+.duck-modal h2 { margin: 4px 0; }
 
 /* ---------- stats/gamificação ---------- */
 

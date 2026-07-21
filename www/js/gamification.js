@@ -38,6 +38,39 @@ function updateStreak(state) {
   return state;
 }
 
+// Sorteio ponderado por raridade — mesma ideia de "puxar" um bichinho
+// num gacha/RPG (Habitica premia pet, Pokémon captura bicho). Retorna
+// a variante sorteada ou null se não sortear nada.
+function rollDuckVariant(pool) {
+  const totalWeight = pool.reduce((sum, v) => sum + v.weight, 0);
+  let roll = Math.random() * totalWeight;
+  for (const variant of pool) {
+    roll -= variant.weight;
+    if (roll <= 0) return variant;
+  }
+  return pool[pool.length - 1];
+}
+
+function randomDuckName() {
+  const pool = window.PsyduckData.DUCK_NAME_POOL;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// Chance de ganhar um novo Psyduck pra fazenda ao concluir algo. Sorteio
+// "comum" tem chance menor de acontecer; level-up e badge são sempre
+// garantidos (evento grande merece recompensa garantida).
+async function maybeAwardDuck({ dropChance, guaranteed, sourceLabel }) {
+  const db = window.PsyduckDB;
+  if (!guaranteed && Math.random() > dropChance) return null;
+  // level-up e badge sorteiam só entre incomum+ (recompensa maior sente melhor)
+  const pool = guaranteed
+    ? window.PsyduckData.DUCK_VARIANTS.filter((v) => v.rarity !== "comum")
+    : window.PsyduckData.DUCK_VARIANTS;
+  const variant = rollDuckVariant(pool);
+  const duck = await db.addDuck(variant.id, randomDuckName(), sourceLabel);
+  return duck;
+}
+
 function checkNewBadges(state) {
   const already = new Set(state.badges || []);
   const newlyEarned = [];
@@ -51,9 +84,9 @@ function checkNewBadges(state) {
   return newlyEarned;
 }
 
-// Chamado quando uma tarefa é concluída. Retorna { state, leveledUp, newBadges }
-// pra tela poder disparar as animações certas.
-async function onTaskCompleted(xpValue) {
+// Chamado quando uma tarefa é concluída. Retorna { state, leveledUp,
+// newBadges, newDuck } pra tela poder disparar as animações certas.
+async function onTaskCompleted(xpValue, taskTitle) {
   const db = window.PsyduckDB;
   let state = await db.getGamificationState();
   const levelBefore = levelForXp(state.xp);
@@ -64,10 +97,16 @@ async function onTaskCompleted(xpValue) {
 
   const levelAfter = levelForXp(state.xp);
   state.level = levelAfter;
+  const leveledUp = levelAfter > levelBefore;
   const newBadges = checkNewBadges(state);
 
   await db.saveGamificationState(state);
-  return { state, leveledUp: levelAfter > levelBefore, newBadges };
+
+  const newDuck =
+    (await maybeAwardDuck({ dropChance: 0.2, guaranteed: leveledUp, sourceLabel: `concluindo "${taskTitle || "uma tarefa"}"` })) ||
+    (newBadges.length ? await maybeAwardDuck({ guaranteed: true, sourceLabel: `conquistando "${newBadges[0].name}"` }) : null);
+
+  return { state, leveledUp, newBadges, newDuck };
 }
 
 async function onPomodoroCompleted() {
@@ -81,10 +120,16 @@ async function onPomodoroCompleted() {
 
   const levelAfter = levelForXp(state.xp);
   state.level = levelAfter;
+  const leveledUp = levelAfter > levelBefore;
   const newBadges = checkNewBadges(state);
 
   await db.saveGamificationState(state);
-  return { state, leveledUp: levelAfter > levelBefore, newBadges };
+
+  const newDuck =
+    (await maybeAwardDuck({ dropChance: 0.2, guaranteed: leveledUp, sourceLabel: "um ciclo de Pomodoro" })) ||
+    (newBadges.length ? await maybeAwardDuck({ guaranteed: true, sourceLabel: `conquistando "${newBadges[0].name}"` }) : null);
+
+  return { state, leveledUp, newBadges, newDuck };
 }
 
 window.PsyduckGamification = {

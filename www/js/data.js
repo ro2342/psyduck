@@ -1,7 +1,7 @@
 // data.js — fonte única de texto de interface e configuração dos métodos.
 // Nada de lógica aqui, só dados (mesmo papel do data.js do theartistsway).
 
-const APP_VERSION = "0.1.0";
+const APP_VERSION = "0.1.1";
 
 const UI_STRINGS = {
   appName: "Psyduck",
@@ -9,6 +9,7 @@ const UI_STRINGS = {
   nav: {
     home: "Início",
     tasks: "Tarefas",
+    farm: "Fazenda",
     kanban: "Kanban",
     eisenhower: "Matriz Eisenhower",
     oneThreeFive: "1-3-5 do dia",
@@ -19,6 +20,27 @@ const UI_STRINGS = {
     settings: "Ajustes",
   },
 };
+
+// Variantes de pato colecionáveis — cada tarefa concluída tem uma chance
+// de "chocar" um novo Psyduck pra família no lago (mecânica tipo
+// Pokémon/gacha). Pesos maiores = mais comum. `accessory` é um detalhe
+// visual extra só pras variantes incomuns/raras, desenhado em mascot.js.
+const DUCK_VARIANTS = [
+  { id: "classic", label: "Clássico", rarity: "comum", weight: 45, bodyColor: "#fbd669", bellyColor: "#f6c445", beakColor: "#f2861f" },
+  { id: "cream", label: "Creme", rarity: "comum", weight: 25, bodyColor: "#fff1cf", bellyColor: "#ffe3a0", beakColor: "#e8a33d" },
+  { id: "dusk", label: "Entardecer", rarity: "incomum", weight: 15, bodyColor: "#8fb8e8", bellyColor: "#6f9bd6", beakColor: "#e8a33d", accessory: "none" },
+  { id: "blossom", label: "Flor de Cerejeira", rarity: "incomum", weight: 10, bodyColor: "#f3a8c4", bellyColor: "#ec86ac", beakColor: "#e8763f", accessory: "flower" },
+  { id: "mint", label: "Menta", rarity: "incomum", weight: 8, bodyColor: "#a6e3c4", bellyColor: "#7fd1a6", beakColor: "#e8a33d", accessory: "none" },
+  { id: "golden", label: "Dourado Raro", rarity: "raro", weight: 3, bodyColor: "#ffd23f", bellyColor: "#ffb100", beakColor: "#c9660a", accessory: "crown" },
+  { id: "starry", label: "Estrelado Raro", rarity: "raro", weight: 2, bodyColor: "#4a3f8f", bellyColor: "#372d70", beakColor: "#e8a33d", accessory: "stars" },
+];
+
+const DUCK_NAME_POOL = [
+  "Toddy", "Migalha", "Bolinha", "Nino", "Pipoca", "Fubá", "Amendoim", "Bilu",
+  "Cacau", "Suco", "Broa", "Sopinha", "Pudim", "Torrada", "Waffle", "Mel",
+  "Canela", "Café", "Biscoito", "Gemada", "Limão", "Cravo", "Aveia", "Panqueca",
+];
+
 
 // Os 10 métodos, com explicação curta (pro "Reminder/Cheat Sheet") e a
 // rota da ferramenta funcional correspondente. `builtin` = true quando
@@ -125,4 +147,12 @@ const BADGE_CONFIGS = [
   { id: "levelUp5", name: "Nível 5", desc: "Chegou ao nível 5.", check: (s) => s.level >= 5 },
 ];
 
-window.PsyduckData = { APP_VERSION, UI_STRINGS, METHOD_CONFIGS, XP_LEVEL_STEP, BADGE_CONFIGS };
+window.PsyduckData = {
+  APP_VERSION,
+  UI_STRINGS,
+  METHOD_CONFIGS,
+  XP_LEVEL_STEP,
+  BADGE_CONFIGS,
+  DUCK_VARIANTS,
+  DUCK_NAME_POOL,
+};

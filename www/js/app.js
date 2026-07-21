@@ -25,44 +25,42 @@ async function render() {
   window.scrollTo(0, 0);
 }
 
+const BOTTOM_NAV_ICONS = { "/home": "🏠", "/tasks": "📋", "/farm": "🦆", "/methods": "🧭", "/settings": "⚙️" };
+
 function shell(activePath, content) {
   const S = window.PsyduckData.UI_STRINGS;
   const nav = [
     ["/home", S.nav.home],
     ["/tasks", S.nav.tasks],
-    ["/kanban", S.nav.kanban],
-    ["/eisenhower", S.nav.eisenhower],
-    ["/one-three-five", S.nav.oneThreeFive],
-    ["/pomodoro", S.nav.pomodoro],
-    ["/timeboxing", S.nav.timeboxing],
-    ["/time-audit", S.nav.timeAudit],
+    ["/farm", S.nav.farm],
     ["/methods", S.nav.methods],
     ["/settings", S.nav.settings],
   ];
+  // Telas que não têm aba própria (Kanban, Eisenhower, Pomodoro, etc.)
+  // continuam acessíveis por link a partir de Tarefas/Métodos — a barra
+  // de baixo fica só com os 5 destinos principais, tipo apps de bichinho
+  // (Finch/Habitica), não um menu-hambúrguer de dashboard.
+  const bottomNavActive = nav.some(([path]) => path === activePath) ? activePath : null;
+
   return `
-    <header class="topbar">
-      <button class="hamburger" data-action="toggle-menu" aria-label="Menu">☰</button>
-      <span class="brand">🦆 ${S.appName}</span>
-    </header>
-    <nav class="side-nav" id="sideNav">
+    <main class="content">${content}</main>
+    <nav class="bottom-nav">
       ${nav
         .map(
-          ([path, label]) =>
-            `<a href="#${path}" class="nav-link ${activePath === path ? "active" : ""}" data-action="close-menu">${label}</a>`
+          ([path, label]) => `
+        <a href="#${path}" class="bottom-nav-item ${bottomNavActive === path ? "active" : ""}">
+          <span class="bottom-nav-icon">${BOTTOM_NAV_ICONS[path]}</span>
+          <span class="bottom-nav-label">${label}</span>
+        </a>`
         )
         .join("")}
     </nav>
-    <div class="nav-overlay" data-action="close-menu"></div>
-    <main class="content">${content}</main>
   `;
 }
 
 // ---------- ações delegadas ----------
 
 const actions = {
-  "toggle-menu": () => document.getElementById("sideNav").classList.toggle("open"),
-  "close-menu": () => document.getElementById("sideNav").classList.remove("open"),
-
   async "task-toggle"(el) {
     const task = await window.PsyduckDB.toggleTaskDone(el.dataset.id);
     if (task && task.done) await celebrateCompletion(task);
@@ -123,6 +121,16 @@ const actions = {
   },
   "timebox-start": () => currentTimebox && currentTimebox.start(),
   "timebox-pause": () => currentTimebox && currentTimebox.pause(),
+  async "show-duck"(el) {
+    const duck = await window.PsyduckDB.dbGet(window.PsyduckDB.STORES.ducks, el.dataset.id);
+    if (duck) showDuckModal(duck, { justHatched: false });
+  },
+  "close-duck-modal": (el) => {
+    const overlay = el.closest(".duck-modal-overlay");
+    overlay.classList.remove("show");
+    setTimeout(() => overlay.remove(), 250);
+    render();
+  },
 };
 
 function todayKey() {
@@ -130,13 +138,14 @@ function todayKey() {
 }
 
 async function celebrateCompletion(task) {
-  const result = await window.PsyduckGamification.onTaskCompleted(task.xpValue);
+  const result = await window.PsyduckGamification.onTaskCompleted(task.xpValue, task.title);
   window.PsyduckNotifications.notifyNow("Boa!", `"${task.title}" concluída. +${task.xpValue} XP`);
   flashToast(
     result.leveledUp
       ? `Subiu pro nível ${result.state.level}! 🎉`
       : `+${task.xpValue} XP — sequência de ${result.state.streak} dia(s)`
   );
+  if (result.newDuck) showDuckModal(result.newDuck, { justHatched: true });
 }
 
 function flashToast(message) {
@@ -149,6 +158,24 @@ function flashToast(message) {
     toast.classList.remove("show");
     setTimeout(() => toast.remove(), 300);
   }, 2600);
+}
+
+function showDuckModal(duck, { justHatched = false } = {}) {
+  const variant = window.PsyduckMascot.duckVariant(duck.variantId);
+  const overlay = document.createElement("div");
+  overlay.className = "duck-modal-overlay";
+  overlay.innerHTML = `
+    <div class="duck-modal">
+      ${justHatched ? `<p class="duck-modal-kicker">Chocou um novo patinho! 🐣</p>` : ""}
+      <div class="duck-modal-art">${window.PsyduckMascot.renderDuckIcon(duck.variantId, { size: 160 })}</div>
+      <h2>${escapeHtml(duck.name)}</h2>
+      <p class="chip rarity-${variant.rarity}">${variant.label} · ${variant.rarity}</p>
+      <p class="hint">Ganhou de ${escapeHtml(duck.sourceLabel || "uma conquista")}.</p>
+      <button class="btn btn-primary" data-action="close-duck-modal">Levar pra fazenda</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add("show"));
 }
 
 root.addEventListener("click", (e) => {
@@ -225,6 +252,7 @@ route("/home", async () => {
   const pending = tasks.filter((t) => !t.done);
   const overdue = pending.filter((t) => t.dueAt && new Date(t.dueAt) < new Date());
   const state = await db.getGamificationState();
+  const ducks = await db.listDucks();
   const mood = window.PsyduckMascot.moodFor({ overdueCount: overdue.length, streak: state.streak, justLeveledUp: false });
   const xpStep = window.PsyduckData.XP_LEVEL_STEP;
   const xpInLevel = window.PsyduckGamification.xpIntoCurrentLevel(state.xp);
@@ -232,8 +260,12 @@ route("/home", async () => {
   const otfToday = tasks.filter((t) => t.oneThreeFiveDate === today);
 
   return `
-    <section class="hero-card">
-      <div class="mascot-wrap">${window.PsyduckMascot.renderMascotSvg(mood)}</div>
+    <section class="scene-hero">
+      ${window.PsyduckMascot.renderFarmBackgroundSvg()}
+      <div class="scene-foreground">
+        <div class="mascot-wrap">${window.PsyduckMascot.renderMascotSvg(mood)}</div>
+        ${ducks.length ? `<a href="#/farm" class="scene-duck-count">🦆 +${ducks.length} na fazenda</a>` : ""}
+      </div>
       <p class="mascot-caption">${window.PsyduckMascot.MOOD_LABELS[mood]}</p>
     </section>
 
@@ -292,6 +324,57 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
+route("/farm", async () => {
+  const db = window.PsyduckDB;
+  const ducks = await db.listDucks();
+
+  // Posição pseudo-aleatória (mas estável) de cada pato em volta do lago,
+  // baseada num hash simples do id — mesmo pato sempre aparece no mesmo
+  // lugar entre uma renderização e outra, sem precisar guardar x/y.
+  function hashPos(id) {
+    let h = 0;
+    for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+    return { left: 8 + (h % 84), top: 48 + ((h >> 8) % 42), delay: (h % 30) / 10 };
+  }
+
+  return `
+    <h1>Fazenda dos Psyducks</h1>
+    <p class="hint">Cada tarefa concluída tem uma chance de chocar um novo Psyduck. Subir de nível garante um.</p>
+    <section class="farm-scene-wrap">
+      ${window.PsyduckMascot.renderFarmBackgroundSvg()}
+      <div class="farm-ducks">
+        ${
+          ducks.length
+            ? ducks
+                .map((d) => {
+                  const pos = hashPos(d.id);
+                  return `<button class="farm-duck" data-action="show-duck" data-id="${d.id}" style="left:${pos.left}%; top:${pos.top}%; animation-delay:${pos.delay}s;">${window.PsyduckMascot.renderDuckIcon(d.variantId, { size: 64 })}</button>`;
+                })
+                .join("")
+            : `<p class="farm-empty">Ainda sem patinhos — conclua tarefas pra começar a família.</p>`
+        }
+      </div>
+    </section>
+    <section class="panel">
+      <h2>Família (${ducks.length})</h2>
+      ${ducks
+        .slice()
+        .reverse()
+        .map((d) => {
+          const v = window.PsyduckMascot.duckVariant(d.variantId);
+          return `<div class="task-row">
+            ${window.PsyduckMascot.renderDuckIcon(d.variantId, { size: 40 })}
+            <div class="task-body">
+              <span class="task-title">${escapeHtml(d.name)}</span>
+              <span class="task-meta"><span class="chip rarity-${v.rarity}">${v.label}</span></span>
+            </div>
+          </div>`;
+        })
+        .join("") || `<p class="empty">Vazio por enquanto.</p>`}
+    </section>
+  `;
+});
+
 route("/tasks", async (query) => {
   const db = window.PsyduckDB;
   let tasks = await db.listTasks();
@@ -306,6 +389,14 @@ route("/tasks", async (query) => {
 
   return `
     <h1>Tarefas</h1>
+    <div class="filter-row quick-tools">
+      <a href="#/kanban" class="chip-link">🗂 Kanban</a>
+      <a href="#/eisenhower" class="chip-link">🎯 Eisenhower</a>
+      <a href="#/one-three-five" class="chip-link">📌 1-3-5</a>
+      <a href="#/pomodoro" class="chip-link">⏱ Pomodoro</a>
+      <a href="#/timeboxing" class="chip-link">⏳ Time-Boxing</a>
+      <a href="#/time-audit" class="chip-link">📊 Auditoria</a>
+    </div>
     <details class="panel" ${tasks.length === 0 ? "open" : ""}>
       <summary>+ Nova tarefa</summary>
       <form data-form="new-task" class="stack">
@@ -476,6 +567,7 @@ route("/pomodoro", async () => {
           const result = await window.PsyduckGamification.onPomodoroCompleted();
           window.PsyduckNotifications.notifyNow("Pomodoro concluído!", "Hora da pausa.");
           flashToast(result.leveledUp ? `Subiu pro nível ${result.state.level}! 🎉` : "+15 XP — pausa merecida");
+          if (result.newDuck) showDuckModal(result.newDuck, { justHatched: true });
         } else {
           window.PsyduckNotifications.notifyNow("Pausa acabou", "De volta ao trabalho, no seu ritmo.");
         }

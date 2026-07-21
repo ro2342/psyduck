@@ -14,10 +14,39 @@ por Device Authorization Grant (UWP/Win10 Mobile) e PKCE (PWA), versão
 sempre bumped, push imediato após cada leva validada, Actions
 acompanhado até o fim.
 
-## Estado atual (v0.1.0)
+## Estado atual (v0.1.1)
 
 Só existe o PWA (`www/`), rodando 100% local — **sem sync, sem app
 nativo, sem integrações externas ainda**. Ver roadmap completo abaixo.
+
+**v0.1.1 (feedback do usuário sobre a v0.1.0)**: o usuário apontou que o
+visual ainda parecia "cara de app feito por IA" (referências mostradas:
+Finch, Habitica, Koda — apps de bichinho/RPG com cena ilustrada, barra
+de navegação inferior, sem menu-hambúrguer/dashboard genérico) e pediu
+uma mecânica de colecionar uma família de Psyducks, tipo Pokémon,
+ganhos ao completar tarefas. Mudanças:
+- **Navegação**: hambúrguer + painel lateral → barra inferior fixa com
+  5 destinos (Início/Tarefas/Fazenda/Métodos/Ajustes). Kanban/
+  Eisenhower/1-3-5/Pomodoro/Time-Boxing/Auditoria não têm mais aba
+  própria — acessados por link rápido em `/tasks` e pelo botão de cada
+  card em `/methods`.
+- **Cena ilustrada**: `renderFarmBackgroundSvg()` em `mascot.js` (céu
+  com gradiente, colinas, celeiro, lago, juncos) substitui o antigo
+  card branco do mascote na Home.
+- **Coleção de patinhos** (`STORES.ducks`, `DB_VERSION` 1→2): cada
+  conclusão de tarefa/Pomodoro tem 20% de chance de "chocar" um novo
+  Psyduck (`maybeAwardDuck` em `gamification.js`), sorteado por peso de
+  raridade entre `DUCK_VARIANTS` (`data.js`); level-up e badge novo
+  **garantem** um pato (só do pool incomum+). Tela `/farm` mostra a
+  cena do lago com os patos espalhados (posição pseudo-aleatória
+  estável por hash do id, `hashPos()` em `app.js`) + lista da família.
+  Ganhar um pato abre um modal de celebração (`showDuckModal`).
+
+**Se for continuar mexendo no visual**: a referência que o usuário deu
+foi apps tipo *Finch* (bichinho de estimação que cresce com
+autocuidado) e *Habitica* (RPG com pets como recompensa) — cena
+ilustrada ocupando espaço real, barra inferior, nada de grid de cards
+cinza. Evitar voltar pro padrão "dashboard SaaS".
 
 ## Onde ficam as coisas
 
@@ -58,6 +87,18 @@ exclusivos):
 
 `kanbanWipLimit` fica em `profile` settings (chave solta, não no blob
 de perfil) — configurável em Ajustes.
+
+## Modelo de dados — patinho (`STORES.ducks`)
+
+```
+{ id, variantId,   // referencia DUCK_VARIANTS em data.js (cor/raridade/acessório)
+  name,            // sorteado de DUCK_NAME_POOL
+  sourceLabel,     // texto livre: de onde veio ("concluindo \"X\"", "conquistando \"Y\"")
+  obtainedAt, updatedAt }
+```
+
+Raridade não é um campo próprio — vem sempre de `duckVariant(variantId).rarity`
+(`comum`/`incomum`/`raro`), pra não duplicar dado que já está em `data.js`.
 
 ## Convenções já em uso (manter)
 
