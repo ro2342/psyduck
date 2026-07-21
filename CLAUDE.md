@@ -71,6 +71,39 @@ Mudanças:
   tarefa) **não** ganham pino/rotação — regra: só listas/conteúdo
   "vivo" parecem nota pregada, formulário continua neutro.
 
+**v0.1.3 (referência detalhada: pixel art estilo Stardew Valley + dashboard
+em colunas)**: usuário mandou uma descrição bem específica de outro app
+(vibecoded, dele mesmo, com uma coluna "SOFIA" pra atividades da filha)
+como referência de estilo. **Não copiado literalmente** — extraído o
+padrão estrutural e adaptado pro domínio do psyduck:
+- **Visual pixel art de verdade**: `mascot.js` reescrito do zero — pato
+  e cenário (casa, pinheiros, árvore redonda, horta com vasos,
+  cachorro, lago com 6 vitórias-régias) agora são só `<rect>` com
+  `shape-rendering: crispEdges`, sem curva nenhuma (nada de
+  `<circle>`/`<ellipse>`/`<path>` com Q/C). Animação de "respirar" do
+  pato trocou de `ease-in-out` suave pra `steps(1, jump-end)` (pulo de
+  2 quadros, tipo sprite de jogo).
+- **Dashboard de 5 colunas no Início** (`.dash-board` em `app.js`):
+  Moedas (XP como moedinhas + nível + streak), Lembretes (tarefas com
+  prazo/lembrete, ícone de letra + estrelas de prioridade), Tarefas
+  (checklist compacto), Fazenda (prévia dos últimos patos + link),
+  Destaque (a tarefa mais importante do dia, expandida). Rolável na
+  horizontal com scroll-snap em tela estreita, vira 5 colunas lado a
+  lado em telas ≥720px (media query no fim de `style.css`).
+- **Coluna Destaque = adaptação da coluna "SOFIA" da referência**: em
+  vez de atividades de criança com humor pós-atividade, aqui é a
+  tarefa prioridade A (ou a "1 grande" do 1-3-5 do dia) — ao marcar
+  como concluída, aparece um seletor de humor de 4 opções
+  (Ruim/Ok/Bom/Muito bom, `reflectionMood` no registro da tarefa) +
+  campo de texto livre (`reflectionNote`), uma auto-reflexão leve sobre
+  como foi a tarefa mais importante do dia. **Bug corrigido durante o
+  build**: a tarefa "destaque" precisou virar um **pin persistente**
+  (`profile.featuredTaskId`/`featuredTaskDate`, `pickFeaturedTask()` em
+  `app.js`) — se a escolha fosse recalculada por filtro `!task.done` a
+  cada render, marcar a tarefa como feita a fazia sumir do Destaque
+  antes do usuário conseguir registrar o humor. Agora ela fica fixada
+  o dia inteiro, mesmo depois de concluída.
+
 ## Onde ficam as coisas
 
 ```

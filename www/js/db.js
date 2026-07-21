@@ -117,6 +117,8 @@ async function saveTask(task) {
       done: false,
       doneAt: null,
       deleted: false,
+      reflectionMood: null, // 'bad' | 'ok' | 'good' | 'great' — só pra tarefa em Destaque
+      reflectionNote: "",
     },
     task,
     { updatedAt: now }

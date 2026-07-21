@@ -4,7 +4,7 @@
 // mesma regra crítica aprendida no theartistsway: cachear resposta de
 // sync faz o app achar que sincronizou pra sempre com o primeiro pull.
 
-const CACHE_NAME = "psyduck-v3";
+const CACHE_NAME = "psyduck-v4";
 const ASSETS = [
   "./",
   "./index.html",

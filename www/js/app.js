@@ -130,6 +130,13 @@ const actions = {
   },
   "timebox-start": () => currentTimebox && currentTimebox.start(),
   "timebox-pause": () => currentTimebox && currentTimebox.pause(),
+  async "set-mood"(el) {
+    const task = await window.PsyduckDB.dbGet(window.PsyduckDB.STORES.tasks, el.dataset.id);
+    if (!task) return;
+    task.reflectionMood = el.dataset.mood;
+    await window.PsyduckDB.saveTask(task);
+    render();
+  },
   async "show-duck"(el) {
     const duck = await window.PsyduckDB.dbGet(window.PsyduckDB.STORES.ducks, el.dataset.id);
     if (duck) showDuckModal(duck, { justHatched: false });
@@ -263,10 +270,7 @@ route("/home", async () => {
   const state = await db.getGamificationState();
   const ducks = await db.listDucks();
   const mood = window.PsyduckMascot.moodFor({ overdueCount: overdue.length, streak: state.streak, justLeveledUp: false });
-  const xpStep = window.PsyduckData.XP_LEVEL_STEP;
-  const xpInLevel = window.PsyduckGamification.xpIntoCurrentLevel(state.xp);
   const today = todayKey();
-  const otfToday = tasks.filter((t) => t.oneThreeFiveDate === today);
 
   const scene = `
     <section class="scene-hero">
@@ -278,43 +282,173 @@ route("/home", async () => {
     </section>
   `;
 
+  const featured = await pickFeaturedTask(tasks, today);
+
   const body = `
     <p class="mascot-caption">${window.PsyduckMascot.MOOD_LABELS[mood]}</p>
-
-    <section class="stat-row">
-      <div class="stat-card">
-        <span class="stat-value">Nível ${state.level}</span>
-        <div class="xp-bar"><div class="xp-fill" style="width:${(xpInLevel / xpStep) * 100}%"></div></div>
-        <span class="stat-sub">${xpInLevel}/${xpStep} XP</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-value">🔥 ${state.streak}</span>
-        <span class="stat-sub">dias seguidos</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-value">${pending.length}</span>
-        <span class="stat-sub">tarefas pendentes</span>
-      </div>
-    </section>
-
-    ${overdue.length ? `<section class="panel panel-warn">
-      <h2>Atrasadas</h2>
-      ${overdue.map(taskRow).join("")}
-    </section>` : ""}
-
-    <section class="panel">
-      <h2>1-3-5 de hoje</h2>
-      <p class="hint">1 grande, 3 médias, 5 pequenas. <a href="#/one-three-five">Montar o dia →</a></p>
-      ${otfToday.length ? otfToday.map(taskRow).join("") : `<p class="empty">Nada escolhido ainda hoje.</p>`}
-    </section>
-
-    <section class="panel">
-      <a class="btn btn-primary btn-block" href="#/tasks">+ Nova tarefa rápida</a>
-    </section>
+    <div class="dash-board">
+      ${renderCoinsColumn(state)}
+      ${renderRemindersColumn(pending)}
+      ${renderTarefasColumn(pending)}
+      ${renderFazendaColumn(ducks)}
+      ${renderDestaqueColumn(featured)}
+    </div>
   `;
 
   return { scene, body };
 });
+
+// A tarefa "Destaque" fica fixada pro dia inteiro assim que escolhida
+// (mesmo depois de concluída, pra dar tempo do usuário registrar o
+// humor) — sem isso, marcar como feita faria o card sumir na hora,
+// escondendo o check-in de humor antes de aparecer.
+async function pickFeaturedTask(tasks, today) {
+  const db = window.PsyduckDB;
+  const pinnedId = await db.getSetting("featuredTaskId", null);
+  const pinnedDate = await db.getSetting("featuredTaskDate", null);
+  if (pinnedDate === today && pinnedId) {
+    const pinned = tasks.find((t) => t.id === pinnedId);
+    if (pinned) return pinned;
+  }
+  const candidate =
+    tasks.find((t) => !t.done && t.oneThreeFiveSlot === "big" && t.oneThreeFiveDate === today) ||
+    tasks.find((t) => !t.done && t.priorityLetter === "A") ||
+    null;
+  if (candidate) {
+    await db.setSetting("featuredTaskId", candidate.id);
+    await db.setSetting("featuredTaskDate", today);
+  }
+  return candidate;
+}
+
+function renderCoinsColumn(state) {
+  const xpStep = window.PsyduckData.XP_LEVEL_STEP;
+  const xpInLevel = window.PsyduckGamification.xpIntoCurrentLevel(state.xp);
+  const coins = Math.floor(state.xp / 10);
+  const coinRows = [];
+  for (let i = 0; i < coins; i += 5) {
+    coinRows.push(`<div class="coin-row">${"🟤".repeat(Math.min(5, coins - i))}</div>`);
+  }
+  return `
+    <section class="dash-col dash-coins">
+      <h3>Moedas</h3>
+      <p class="dash-level">Nível ${state.level}</p>
+      <div class="xp-bar"><div class="xp-fill" style="width:${(xpInLevel / xpStep) * 100}%"></div></div>
+      <div class="coin-stack">${coinRows.join("") || `<p class="empty">Sem moedas ainda</p>`}</div>
+      <p class="dash-streak">🔥 ${state.streak} dia(s)</p>
+    </section>
+  `;
+}
+
+function renderRemindersColumn(pending) {
+  const withReminders = pending
+    .filter((t) => t.remindAt || t.dueAt)
+    .sort((a, b) => new Date(a.remindAt || a.dueAt) - new Date(b.remindAt || b.dueAt))
+    .slice(0, 5);
+  const stars = { A: "★★★", B: "★★", C: "★", D: "★" };
+  return `
+    <section class="dash-col">
+      <h3>Lembretes</h3>
+      ${
+        withReminders
+          .map(
+            (t) => `
+        <div class="mini-task-card">
+          <span class="mini-icon">${escapeHtml((t.title[0] || "?").toUpperCase())}</span>
+          <span class="mini-title">${escapeHtml(t.title)}</span>
+          <span class="mini-stars">${stars[t.priorityLetter] || ""}</span>
+        </div>`
+          )
+          .join("") || `<p class="empty">Nada marcado.</p>`
+      }
+    </section>
+  `;
+}
+
+function renderTarefasColumn(pending) {
+  const list = pending.slice(0, 8);
+  return `
+    <section class="dash-col">
+      <h3>Tarefas</h3>
+      ${
+        list
+          .map(
+            (t) => `
+        <label class="mini-check-row">
+          <input type="checkbox" data-action="task-toggle" data-id="${t.id}" />
+          <span>${escapeHtml(t.title)}</span>
+        </label>`
+          )
+          .join("") || `<p class="empty">Tudo em dia!</p>`
+      }
+      <a href="#/tasks" class="dash-see-all">ver todas →</a>
+    </section>
+  `;
+}
+
+function renderFazendaColumn(ducks) {
+  const preview = ducks.slice(-3);
+  return `
+    <section class="dash-col dash-farm">
+      <h3>Fazenda</h3>
+      <div class="dash-farm-preview">
+        ${preview.map((d) => window.PsyduckMascot.renderDuckIcon(d.variantId, { size: 48 })).join("") || `<p class="empty">Sem patos ainda</p>`}
+      </div>
+      <p class="dash-farm-count">${ducks.length} na família</p>
+      <a href="#/farm" class="dash-see-all">ver fazenda →</a>
+    </section>
+  `;
+}
+
+function renderDestaqueColumn(featured) {
+  if (!featured) {
+    return `
+      <section class="dash-col dash-featured">
+        <h3>Destaque</h3>
+        <p class="empty">Nenhuma tarefa em destaque. Marque uma como prioridade A ou escolha a "1 grande" do dia.</p>
+        <a href="#/one-three-five" class="dash-see-all">montar o dia →</a>
+      </section>
+    `;
+  }
+
+  const moods = [
+    ["bad", "😞", "Ruim"],
+    ["ok", "😐", "Ok"],
+    ["good", "🙂", "Bom"],
+    ["great", "🤩", "Muito bom"],
+  ];
+
+  return `
+    <section class="dash-col dash-featured">
+      <h3>Destaque</h3>
+      <div class="featured-card">
+        <label class="featured-check-row">
+          <input type="checkbox" data-action="task-toggle" data-id="${featured.id}" ${featured.done ? "checked" : ""} />
+          <span class="featured-title">${escapeHtml(featured.title)}</span>
+        </label>
+        ${featured.notes ? `<p class="featured-notes">${escapeHtml(featured.notes)}</p>` : ""}
+        ${
+          featured.done
+            ? `
+          <p class="hint">Como foi?</p>
+          <div class="mood-picker">
+            ${moods
+              .map(
+                ([id, icon, label]) => `
+              <button class="mood-btn ${featured.reflectionMood === id ? "selected" : ""}" data-action="set-mood" data-id="${featured.id}" data-mood="${id}">
+                <span>${icon}</span><span class="mood-label">${label}</span>
+              </button>`
+              )
+              .join("")}
+          </div>
+          <textarea class="reflection-note" placeholder="Como foi? (opcional)" data-id="${featured.id}" onblur="window.PsyduckApp.saveReflectionNote(this)">${escapeHtml(featured.reflectionNote || "")}</textarea>
+        `
+            : ""
+        }
+      </div>
+    </section>
+  `;
+}
 
 function taskRow(t) {
   const countdown = t.dueAt ? window.PsyduckMethods.formatCountdown(t.dueAt) : null;
@@ -331,6 +465,14 @@ function taskRow(t) {
       <button class="icon-btn" data-action="task-delete" data-id="${t.id}" aria-label="Excluir">🗑</button>
     </div>`;
 }
+
+async function saveReflectionNote(textarea) {
+  const task = await window.PsyduckDB.dbGet(window.PsyduckDB.STORES.tasks, textarea.dataset.id);
+  if (!task) return;
+  task.reflectionNote = textarea.value;
+  await window.PsyduckDB.saveTask(task);
+}
+window.PsyduckApp = { saveReflectionNote };
 
 function escapeHtml(str) {
   const div = document.createElement("div");
