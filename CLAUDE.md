@@ -14,7 +14,23 @@ por Device Authorization Grant (UWP/Win10 Mobile) e PKCE (PWA), versão
 sempre bumped, push imediato após cada leva validada, Actions
 acompanhado até o fim.
 
-## Estado atual (v0.1.9)
+**Docs de referência soltos na raiz do repo** (não geram código sozinhos
+— usar como checklist/contexto, não como spec pra copiar literalmente):
+- `auditoria-visual-psyduck.md` — checklist de "por que ainda parece
+  feito por IA" (tipografia, sombra, cantos, ícones, transições, grid).
+  Boa parte já foi corrigida na v0.1.10 (ver abaixo); o que sobrou
+  (transições suaves em hover/click, spinners) fica registrado lá.
+- `SPEC.md` — descreve o app de referência ORIGINAL (vídeo) com muito
+  mais detalhe: avatares humanos da família, ciclo dia/noite, horta que
+  cresce com o progresso, cachorro andando sozinho, painel de chat
+  "Sofá"/"Amanda" com check-ins conversacionais, stack sugerido
+  Next.js+TypeScript+SQLite/Prisma. **Isso é referência, não backlog
+  aprovado** — vários itens contradizem decisões já tomadas (avatares
+  humanos foram recusados a favor só dos patos; nosso stack é vanilla
+  JS sem build, não Next.js). Só implementar algo de lá se o usuário
+  pedir explicitamente aquele item específico.
+
+## Estado atual (v0.1.10)
 
 Só existe o PWA (`www/`), rodando 100% local — **sem sync com nuvem,
 sem app nativo ainda** (Obsidian/clima/livros já existem, mas Google
@@ -310,6 +326,52 @@ pato). O `click` sozinho já bastava (como sempre bastou nas versões
 anteriores). Pego antes de subir, via teste comparando XP antes/depois
 de um clique único (delta tinha que ser exatamente `xpValue`, não o
 dobro).
+
+**v0.1.10 (checklist de 7 itens, "auditoria visual anti-cara-de-IA")**:
+usuário mandou 7 mudanças de CSS/JS numeradas, pedindo confirmação
+visual (screenshot) uma por uma antes de seguir pra próxima; depois de
+confirmar os 2 primeiros itens, disse pra fazer o resto tudo e só
+avisar no final. Aplicado:
+1. **Dashboard sempre claro no tema escuro**: removidas as 11
+   variáveis (`--bg`, `--bg-elevated`, `--bg-column`, `--card-bg`,
+   `--text`, `--text-main`, `--text-soft`, `--border`, `--warn-bg`,
+   `--warn-text`, `--shadow`) de dentro de `:root[data-theme="dark"]`
+   — mesma regra que já existia pra `--scene-*` ("a fazenda é sempre
+   de dia"), agora estendida pro dashboard inteiro. Confirmado com
+   screenshot em `--force-dark-mode`.
+2. **Fonte pixel**: "Press Start 2P" (cabeçalhos/botões/nível) +
+   "Silkscreen" (resto do texto) via Google Fonts — única dependência
+   externa do projeto além das APIs de dados (Open-Meteo/Open Library),
+   com fallback `monospace` se ficar offline (nunca cacheada pelo
+   service worker, por ser cross-origin).
+3. **Border-radius ≤2px em tudo, sem exceção**: incluindo
+   `.reminder-icon` (era círculo, virou quadrado com borda de 2px) e
+   `.settings-btn` (idem). Auditado via CDP depois: nenhum elemento da
+   página passa de 2.5px de `border-radius`.
+4. **Sombra sólida, sem blur**: `--shadow` virou
+   `3px 3px 0 rgba(60,40,15,0.35)`; `.window-frame` virou
+   `5px 5px 0 rgba(0,0,0,0.4)` (era duas sombras, uma com blur de
+   24px). `.ui-card` já estava correto (`0 3px 0`, sem blur), não
+   mexido. **Não coberto** (fora da lista de 7 itens): `filter:
+   drop-shadow(...)` do mascote/patinhos ainda tem blur — não mexido
+   por não estar na lista explícita, mas é o mesmo problema.
+5. **Emoji nativo → texto ou ícone pixelado**: dos 6 pedidos
+   (⚙️🦆🔥🎉🐣✕), a engrenagem virou `pixelGearSvg()` (retângulos,
+   reusada no botão de Ajustes e no título do modal); os outros 5
+   viraram só texto (removido o emoji, mantida a frase). Emoji **não
+   pedidos** (✓❤️😞😐🙂🤩📕🗑⏸) foram deixados como estavam —
+   escopo é só os 6 nomeados.
+6. **Gradiente removido**: `.chip.rarity-raro` virou cor sólida
+   `#ffc93f` + borda, sem `linear-gradient`.
+7. **Ícone de moeda sem `<circle>`**: `coinIconSvg()` reescrito como
+   octógono bloqueado (só `<rect>`), confirmado via CDP
+   (`querySelectorAll('.coin-icon circle').length === 0`).
+
+Itens do `auditoria-visual-psyduck.md` **não cobertos** por essa leva
+(ficam de fora até o usuário pedir): transições suaves em hover/click
+(`transition: transform 0.12s ease` em `.btn` ainda existe), scrollbar
+com radius residual de estilo suave. `SPEC.md` não foi tocado — ver
+nota no topo do arquivo sobre tratá-lo como referência, não backlog.
 
 ## Onde ficam as coisas
 

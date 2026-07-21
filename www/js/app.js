@@ -11,6 +11,25 @@ const root = document.getElementById("app");
 let settingsOpen = false;
 let focusTimer = null; // TimeboxTimer ativo (rodapé da coluna Livros)
 
+// Ícone de engrenagem em pixel art (retângulos, mesma técnica do
+// mascot.js) — substitui o emoji nativo ⚙️, que quebrava a ilusão de
+// pixel art desenhada à mão.
+function pixelGearSvg(size = 20) {
+  return `
+  <svg viewBox="0 0 16 16" width="${size}" height="${size}" shape-rendering="crispEdges" aria-hidden="true">
+    <rect x="6" y="0" width="4" height="2" fill="var(--text-main)"/>
+    <rect x="6" y="14" width="4" height="2" fill="var(--text-main)"/>
+    <rect x="0" y="6" width="2" height="4" fill="var(--text-main)"/>
+    <rect x="14" y="6" width="2" height="4" fill="var(--text-main)"/>
+    <rect x="2" y="2" width="3" height="3" fill="var(--text-main)"/>
+    <rect x="11" y="2" width="3" height="3" fill="var(--text-main)"/>
+    <rect x="2" y="11" width="3" height="3" fill="var(--text-main)"/>
+    <rect x="11" y="11" width="3" height="3" fill="var(--text-main)"/>
+    <rect x="4" y="4" width="8" height="8" fill="var(--text-main)"/>
+    <rect x="6" y="6" width="4" height="4" fill="var(--bg-column)"/>
+  </svg>`;
+}
+
 function todayKey() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -45,7 +64,7 @@ async function celebrateCompletion(task) {
   window.PsyduckNotifications.notifyNow("Boa!", `"${task.title}" concluída. +${task.xpValue} XP`);
   flashToast(
     result.leveledUp
-      ? `Subiu pro nível ${result.state.level}! 🎉`
+      ? `Subiu pro nível ${result.state.level}!`
       : `+${task.xpValue} XP — sequência de ${result.state.streak} dia(s)`
   );
   if (result.newDuck) showDuckModal(result.newDuck, { justHatched: true });
@@ -57,7 +76,7 @@ function showDuckModal(duck, { justHatched = false } = {}) {
   overlay.className = "duck-modal-overlay";
   overlay.innerHTML = `
     <div class="duck-modal">
-      ${justHatched ? `<p class="duck-modal-kicker">Chocou um novo patinho! 🐣</p>` : ""}
+      ${justHatched ? `<p class="duck-modal-kicker">Chocou um novo patinho!</p>` : ""}
       <div class="duck-modal-art">${window.PsyduckMascot.renderDuckIcon(duck.variantId, { size: 140 })}</div>
       <h2>${escapeHtml(duck.name)}</h2>
       <p class="chip rarity-${variant.rarity}">${variant.label} · ${variant.rarity}</p>
@@ -100,9 +119,9 @@ async function render() {
             return `<button class="farm-duck" data-action="show-duck" data-id="${d.id}" style="left:${pos.left}%; top:${pos.top}%; animation-delay:${pos.delay}s;">${window.PsyduckMascot.renderDuckIcon(d.variantId, { size: 46 })}</button>`;
           }).join("")}
           <span class="scene-mood-badge">${window.PsyduckMascot.MOOD_LABELS[mood]}</span>
-          ${ducks.length ? `<span class="scene-duck-count">🦆 ${ducks.length}</span>` : ""}
+          ${ducks.length ? `<span class="scene-duck-count">${ducks.length} pato(s)</span>` : ""}
         </div>
-        <button class="settings-btn" data-action="open-settings" aria-label="Ajustes">⚙️</button>
+        <button class="settings-btn" data-action="open-settings" aria-label="Ajustes">${pixelGearSvg(18)}</button>
       </section>
 
       <div class="wooden-dashboard">
@@ -144,8 +163,18 @@ async function pickFeaturedTask(tasks, today) {
 
 // ---------- coluna: Moedas ----------
 
+// Moeda em pixel art (só <rect>, sem <circle>) — octógono bloqueado
+// pra sugerir "redondo" sem curva nenhuma, igual ao resto da cena.
 function coinIconSvg() {
-  return `<svg viewBox="0 0 16 16" class="coin-icon"><circle cx="8" cy="8" r="7" fill="#c98a4f" stroke="#8c5a32" stroke-width="1.5"/><circle cx="8" cy="8" r="3.5" fill="#e2a86e"/></svg>`;
+  return `<svg viewBox="0 0 16 16" class="coin-icon" shape-rendering="crispEdges">
+    <rect x="4" y="1" width="8" height="1" fill="#8c5a32"/>
+    <rect x="2" y="2" width="12" height="1" fill="#8c5a32"/>
+    <rect x="1" y="3" width="14" height="10" fill="#8c5a32"/>
+    <rect x="2" y="13" width="12" height="1" fill="#8c5a32"/>
+    <rect x="4" y="14" width="8" height="1" fill="#8c5a32"/>
+    <rect x="3" y="4" width="10" height="8" fill="#c98a4f"/>
+    <rect x="5" y="6" width="6" height="4" fill="#e2a86e"/>
+  </svg>`;
 }
 
 async function renderMoedasColumn(state) {
@@ -162,7 +191,7 @@ async function renderMoedasColumn(state) {
         <p class="dash-level">Nível ${state.level}</p>
         <div class="xp-bar"><div class="xp-fill" style="width:${(xpInLevel / xpStep) * 100}%"></div></div>
         <div class="coin-grid">${coinIconSvg().repeat(Math.min(coins, 60))}</div>
-        <p class="dash-streak">🔥 ${state.streak} dia(s) seguidos</p>
+        <p class="dash-streak">${state.streak} dia(s) seguidos</p>
       </div>
       <div class="column-footer">
         <div class="time-audit-mini">
@@ -469,7 +498,7 @@ const actions = {
     const book = await window.PsyduckDB.advanceBookChapter(el.dataset.id);
     if (book) {
       const result = await window.PsyduckGamification.onTaskCompleted(10, "capítulo de " + book.title);
-      flashToast(result.leveledUp ? `Subiu pro nível ${result.state.level}! 🎉` : `+10 XP — capítulo ${book.currentChapter}`);
+      flashToast(result.leveledUp ? `Subiu pro nível ${result.state.level}!` : `+10 XP — capítulo ${book.currentChapter}`);
       if (result.newDuck) showDuckModal(result.newDuck, { justHatched: true });
     }
     render();
@@ -482,7 +511,7 @@ const actions = {
       onComplete: async () => {
         window.PsyduckNotifications.notifyNow("Foco concluído!", `${minutes} minutos de foco.`);
         const result = await window.PsyduckGamification.onPomodoroCompleted();
-        flashToast(result.leveledUp ? `Subiu pro nível ${result.state.level}! 🎉` : "+15 XP — foco concluído");
+        flashToast(result.leveledUp ? `Subiu pro nível ${result.state.level}!` : "+15 XP — foco concluído");
         if (result.newDuck) showDuckModal(result.newDuck, { justHatched: true });
         focusTimer = null;
         render();
@@ -686,8 +715,8 @@ async function renderSettingsModal() {
     <div class="modal-overlay show">
       <div class="window-frame">
         <div class="window-title-bar">
-          <span>⚙️ Ajustes</span>
-          <button class="window-close-btn" data-action="close-settings">✕</button>
+          <span class="window-title-icon">${pixelGearSvg(16)}Ajustes</span>
+          <button class="window-close-btn" data-action="close-settings">X</button>
         </div>
         <div class="window-body">
           <section class="window-section">
