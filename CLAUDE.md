@@ -599,6 +599,56 @@ login agora aparece na tela)**:
    toast de erro, em vez de sumir em silêncio). Avisar o usuário pra
    checar isso e testar de novo.
 
+**v0.1.16 (achado: era outro arquivo de referência + horta de verdade
++ diagnóstico do CONFIGURATION_NOT_FOUND)**:
+1. **"O jardim ainda não tá igual ao CSS que eu mandei antes"**: o
+   usuário tinha fornecido DOIS arquivos de referência diferentes em
+   `C:\RodsDesktop\` — `cenario_pixel_art_16bit-v2.html` (o que eu já
+   tinha usado, com o sistema de tema dia/noite/clima) e
+   `fazenda_pixel_art_16bit.html` (um arquivo separado, uma cena de
+   fazenda estática — casa de tronco, **canteiros de horta de verdade**
+   com fileiras de tomate/couve/milho, lago com píer, espantalho — que
+   eu não tinha visto/incorporado ainda). O "jardim" do usuário se
+   referia a esse segundo arquivo. Também descoberto nesse processo:
+   o `city-center` do `cenario_pixel_art_16bit-v2.html` (o "prédio de
+   fundo" que eu tinha herdado sem querer) é literalmente um Pokémon
+   Center — tem uma placa "PC" e o logo da Pokébola. Escondido via CSS
+   (`.farm-bg .city-center { display: none; }`) por dois motivos: não
+   combina com a fazenda do Psyduck, e reproduzir marca registrada de
+   terceiro (mesmo escondida no meio de ~800 elementos) não é uma boa
+   ideia num app que vai ficar publicado. `smallGarden()` (`mascot.js`)
+   reescrita do zero: em vez do vaso único de antes, agora é um
+   canteiro cercado (2 postes de madeira + moldura + terra) com 6
+   hortaliças em fileira (vermelho/verde/amarelo, novas variáveis
+   `--scene-crop-red/green/yellow` em `style.css`), no espírito do
+   arquivo de referência.
+   - **Armadilha de teste séria, achada nesta leva**: depois de editar
+     `style.css`/`mascot.js`, os screenshots de teste continuavam
+     mostrando a versão ANTIGA mesmo com `Network.setCacheDisabled` e
+     `?t=timestamp` na URL de navegação. Causa: o **service worker** já
+     tinha sido instalado numa navegação de teste anterior (antes da
+     edição) e ficou servindo `css/style.css`/`js/mascot.js` do cache
+     dele (`caches.match`), uma camada que fica ACIMA do cache HTTP
+     normal do navegador — nem `setCacheDisabled` nem query string
+     bypassa isso. Resolvido chamando
+     `navigator.serviceWorker.getRegistrations()` +
+     `.unregister()` + `caches.keys()/.delete()` antes de cada
+     screenshot de verificação. **Isso é uma armadilha real também pra
+     usuários de verdade**: se o app parecer "não mudou nada" depois de
+     um deploy nosso, o botão "Forçar atualização" em Ajustes
+     (v0.1.6) existe exatamente pra isso.
+2. **Login: `Falha no login: CONFIGURATION_NOT_FOUND`**: o usuário
+   confirmou que o redirect URI já está certo no Google Cloud Console.
+   Esse erro específico vem do Firebase (Identity Toolkit), não do
+   Google OAuth client — significa que o **Firebase Authentication**
+   do projeto `psyduck-42` provavelmente nunca foi inicializado (é uma
+   etapa separada de configurar o client OAuth). Passo que o usuário
+   precisa fazer manualmente: Firebase Console → projeto `psyduck-42`
+   → Authentication → "Get started" (se ainda não tiver) → aba
+   "Sign-in method" → habilitar o provedor "Google" → definir e-mail
+   de suporte → Salvar. Não dá pra confirmar de dentro do código se
+   isso resolve — pedir pro usuário testar de novo depois desse passo.
+
 **Ainda pendente** (de sessões anteriores, não fez parte desta leva):
 acesso funcional de verdade aos métodos (Kanban de verdade, matriz de
 Eisenhower de verdade, não só pílulas/modal explicativo).

@@ -228,17 +228,25 @@ function smallHouse(x, y) {
   `;
 }
 
-// Horta compacta + vaso, ao lado da casa.
+// Horta de verdade (canteiro cercado com fileiras de hortaliça — tomate/
+// couve/milho), no estilo do fazenda_pixel_art_16bit.html que o usuário
+// forneceu, em vez do vaso único de antes.
 function smallGarden(x, y) {
+  const red = "var(--scene-crop-red)";
+  const green = "var(--scene-crop-green)";
+  const yellow = "var(--scene-crop-yellow)";
+  const crop = (cx, cy, color) => `<rect x="${cx}" y="${cy}" width="6" height="5" fill="${color}"/>`;
   return `
-    <rect x="${x}" y="${y}" width="52" height="20" fill="var(--scene-soil-frame)"/>
-    <rect x="${x + 3}" y="${y + 3}" width="46" height="14" fill="var(--scene-soil)"/>
-    <rect x="${x + 6}" y="${y - 8}" width="4" height="10" fill="var(--scene-round-leaf)"/>
-    <rect x="${x + 18}" y="${y - 10}" width="4" height="12" fill="var(--scene-round-leaf)"/>
-    <rect x="${x + 32}" y="${y - 8}" width="4" height="10" fill="var(--scene-round-leaf)"/>
-    <rect x="${x + 44}" y="${y - 9}" width="4" height="11" fill="var(--scene-round-leaf)"/>
-    <rect x="${x - 16}" y="${y + 4}" width="12" height="12" fill="var(--scene-pot)"/>
-    <rect x="${x - 13}" y="${y - 3}" width="6" height="7" fill="var(--scene-round-leaf)"/>
+    <rect x="${x - 4}" y="${y - 2}" width="4" height="28" fill="var(--scene-trunk)"/>
+    <rect x="${x + 44}" y="${y - 2}" width="4" height="28" fill="var(--scene-trunk)"/>
+    <rect x="${x}" y="${y}" width="44" height="24" fill="var(--scene-soil-frame)"/>
+    <rect x="${x + 3}" y="${y + 3}" width="38" height="18" fill="var(--scene-soil)"/>
+    ${crop(x + 8, y + 6, red)}
+    ${crop(x + 19, y + 6, green)}
+    ${crop(x + 30, y + 6, yellow)}
+    ${crop(x + 8, y + 14, green)}
+    ${crop(x + 19, y + 14, red)}
+    ${crop(x + 30, y + 14, yellow)}
   `;
 }
 
