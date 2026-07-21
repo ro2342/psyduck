@@ -14,7 +14,7 @@ por Device Authorization Grant (UWP/Win10 Mobile) e PKCE (PWA), versão
 sempre bumped, push imediato após cada leva validada, Actions
 acompanhado até o fim.
 
-## Estado atual (v0.1.4)
+## Estado atual (v0.1.5)
 
 Só existe o PWA (`www/`), rodando 100% local — **sem sync, sem app
 nativo, sem integrações externas ainda**. Ver roadmap completo abaixo.
@@ -128,6 +128,31 @@ padrão estrutural e adaptado pro domínio do psyduck:
    referência (que era captura de desktop). Isso corrige a descrição
    de "rolável na horizontal" que ficou desatualizada no item v0.1.3
    acima.
+
+**v0.1.5 (bug real: cena ilegível no tema escuro + lago devia ser
+oval)**: usuário mandou um diagnóstico longo (parcialmente gerado por
+IA a partir de prints/vídeo) comparando o psyduck com a referência.
+Boa parte do texto descrevia **outro app** (o vídeo de referência mais
+maduro, com clima/Obsidian/rastreador de livro/avatares humanos) — não
+escopo do psyduck, confirmado com o usuário que não entra nada disso
+agora. Mas dois bugs reais estavam no meio:
+- **Cena virava uma mancha verde/preta chapada**: as variáveis
+  `--scene-*` eram redefinidas dentro de `:root[data-theme="dark"]`
+  com tons muito escurecidos — sol, céu e colina ficavam quase da
+  mesma cor escura, sem contraste nenhum. Removidas as redefinições de
+  `--scene-*` no bloco dark: a cena da fazenda **sempre** usa a
+  paleta clara de dia, independente do tema do app (mesma lógica de
+  jogo cozy — o mundo não vira noite só porque a UI virou tema
+  escuro). Só a UI ao redor (fundo de página, cards, texto) continua
+  respeitando claro/escuro/automático normalmente.
+- **Lago era um retângulo**: trocado por duas `<ellipse>` (borda +
+  água), vitórias-régias reposicionadas pra caber dentro do oval.
+  Pixel art não precisa ser só retângulo — curva faz sentido pra água.
+
+Testado via CDP com `--force-dark-mode`: confirmado
+`--scene-sky-top`/`--scene-hill-near` computados continuam nos tons
+claros originais mesmo com `data-theme="dark"` ativo, e o SVG da cena
+agora tem 2 elementos `<ellipse>` (lago).
 
 ## Onde ficam as coisas
 

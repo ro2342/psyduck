@@ -39,6 +39,12 @@
   font-size: 16px;
 }
 
+/* As cores da CENA (--scene-*) não mudam no tema escuro de propósito —
+   a fazenda é sempre de dia, feito o mundo de um cozy game, não a UI
+   do app. Escurecer tudo por igual (como era antes) deixava sol,
+   colina e céu quase da mesma cor escura, virando uma mancha só —
+   exatamente o bug que o usuário reportou ("fundo verde escuro
+   chapado"). Só a UI ao redor (cards, texto, fundo da página) muda. */
 :root[data-theme="dark"] {
   --bg: #241a10;
   --bg-elevated: #322820;
@@ -48,30 +54,6 @@
   --warn-bg: #4a2416;
   --warn-text: #ffb08a;
   --shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
-  --scene-sky-top: #2b3350;
-  --scene-sky-bottom: #55406a;
-  --scene-sun: #f0c04a;
-  --scene-hill-far: #2f4a38;
-  --scene-hill-near: #223a29;
-  --scene-barn: #8a453a;
-  --scene-barn-roof: #4a241d;
-  --scene-barn-door: #2e1712;
-  --scene-lake: #2a5570;
-  --scene-lake-edge: #7fb8d6;
-  --scene-reed: #3a5c30;
-  --scene-cloud: #d8dce8;
-  --scene-lily: #2f5c34;
-  --scene-lily-flower: #d688a8;
-  --scene-trunk: #4a3320;
-  --scene-pine: #24462c;
-  --scene-round-leaf: #3d6a34;
-  --scene-barn-roof-dark: #2e1712;
-  --scene-window: #6a9aa8;
-  --scene-soil-frame: #4a3320;
-  --scene-soil: #2e1f12;
-  --scene-pot: #6a3f28;
-  --scene-dog: #8a5c34;
-  --scene-dog-dark: #6a4425;
 }
 
 * { box-sizing: border-box; }

@@ -149,8 +149,8 @@ function roundTree(x, y, scale = 1) {
 // (não fazem parte deste SVG), pra cada um poder animar sozinho.
 function renderFarmBackgroundSvg() {
   const lilies = [
-    [560, 330, 1], [610, 355, 0.8], [660, 320, 0.9],
-    [520, 360, 0.85], [700, 350, 1], [630, 300, 0.7],
+    [560, 325, 1], [600, 350, 0.8], [650, 320, 0.9],
+    [535, 345, 0.85], [680, 345, 1], [615, 310, 0.7],
   ]
     .map(([cx, cy, s]) => lilyPad(cx, cy, s))
     .join("");
@@ -198,9 +198,9 @@ function renderFarmBackgroundSvg() {
     <rect x="316" y="330" width="6" height="10" fill="var(--scene-dog)"/>
     <rect x="346" y="330" width="6" height="10" fill="var(--scene-dog-dark)"/>
 
-    <!-- lago -->
-    <rect x="480" y="290" width="260" height="90" fill="var(--scene-lake)"/>
-    <rect x="480" y="288" width="260" height="6" fill="var(--scene-lake-edge)"/>
+    <!-- lago (oval, não retângulo — água de verdade não tem canto reto) -->
+    <ellipse cx="610" cy="335" rx="145" ry="48" fill="var(--scene-lake-edge)"/>
+    <ellipse cx="610" cy="338" rx="132" ry="40" fill="var(--scene-lake)"/>
     ${lilies}
   </svg>`;
 }
