@@ -30,13 +30,54 @@ acompanhado até o fim.
   JS sem build, não Next.js). Só implementar algo de lá se o usuário
   pedir explicitamente aquele item específico.
 
-## Estado atual (v0.1.14)
+## Estado atual (v0.1.24 — leia isto primeiro ao retomar)
 
-PWA (`www/`) com a infraestrutura de sync na nuvem **construída e
-com o fluxo de OAuth confirmado batendo no Google de verdade**, mas
-**ainda não utilizável de ponta a ponta** — falta um passo manual no
-Google Cloud Console (ver v0.1.14 abaixo). App nativo UWP continua no
-roadmap. Ver roadmap completo abaixo.
+PWA (`www/`), publicado em `https://ro2342.github.io/psyduck/`.
+Resumo rápido de onde as coisas estão:
+
+- **Login com Google + sync: funcionando de verdade.** Usuário
+  confirmou login concluído (v0.1.20) depois de habilitar o provedor
+  Google no Firebase Authentication. `auth.js`/`sync.js` sincronizam
+  tasks/projects/timeAuditLog/ducks/books/notes + profile/gamification.
+  **Ainda pendente**: travar as regras de segurança do Firestore (hoje
+  em modo de teste) — ver `setup-google-cloud.md`.
+- **Cena da fazenda**: 100% fiel a
+  `C:\RodsDesktop\cenario_pixel_art_16bit-v2.html` (céu/estrelas/clima
+  real, prédio de fundo tipo Pokémon Center incluso — decisão explícita
+  do usuário, ciente do risco de marca). Nenhum elemento próprio
+  (casa/horta/cachorro/lago) sobreposto — foram removidos na v0.1.20 a
+  pedido do usuário. Grama listrada estende por toda a largura sem
+  costura (v0.1.19). `.scene-container` a 44vh.
+- **Kanban/Eisenhower/Pomodoro são ferramentas de verdade agora**,
+  todas dentro de UM modal só ("Técnicas"): botão "+" na cena (abre no
+  Pomodoro por padrão) ou botão "▦" na coluna Todos (abre direto no
+  Kanban). Pomodoro tem ciclo foco/pausa automático de verdade (25/5min,
+  pausa longa a cada 4). As outras 5 técnicas (Time-Boxing, 1-3-5,
+  Auditoria de Tempo, ABCD-Z, 80/20) continuam só com pílula/timer
+  simples — usuário confirmou que tá bem deixar assim por enquanto.
+  O modal de Métodos ("?") agora diz "Onde usar" pra cada uma das 10.
+- **Controles de tarefa** (coluna Todos): prioridade/Kanban/Eisenhower/
+  1-3-5 viraram `<select>` com nome completo escrito (não mais pílula
+  cíclica com sigla tipo "UI"); 2min/80-20 viraram checkbox de
+  verdade com rótulo. Tudo isso a pedido do usuário (v0.1.22) depois
+  dele apontar que as pílulas só faziam sentido passando o mouse.
+- **Lembretes** ganhou uma segunda seção, "Notas rápidas" (v0.1.23) —
+  bloco de notas de texto livre, sem tarefa associada, com add/excluir.
+- **Campos de "+adicionar"** (Tarefas/Livros/Notas) têm botão "OK"
+  visível ao lado, além do Enter (v0.1.24) — mais óbvio no celular.
+- App nativo UWP: **não iniciado ainda**, continua só no roadmap.
+
+**Armadilha de teste que se repetiu várias vezes nesta sessão**: o
+service worker cacheia agressivamente — depois de qualquer edição em
+`style.css`/`*.js`, sempre rodar
+`navigator.serviceWorker.getRegistrations()` + `.unregister()` +
+`caches.keys()`/`.delete()` antes de tirar screenshot de verificação,
+mesmo no meio da mesma sessão de teste (reaparece a cada navegação).
+Pro usuário: o botão "Forçar atualização" em Ajustes resolve o mesmo
+problema do lado dele.
+
+Ver o changelog completo (v0.1.0 em diante) mais abaixo neste arquivo
+pra detalhe de cada leva.
 
 ## Arquitetura de tela única (desde a v0.1.9 — LEIA ANTES DE MEXER NA UI)
 
@@ -50,9 +91,10 @@ tentado e revertido por instrução direta dele.
 
 `www/js/app.js` hoje é uma função `render()` só, chamada de novo a
 cada mutação, que desenha:
-- `.scene-container` (topo, ~42vh) — cena da fazenda + mascote + todos
+- `.scene-container` (topo, 44vh) — cena da fazenda + mascote + todos
   os patos da família espalhados (sempre visíveis, não só numa tela
-  "Fazenda" — não existe mais tela dedicada) + botão de engrenagem.
+  "Fazenda" — não existe mais tela dedicada) + botões de engrenagem/
+  métodos ("?")/técnicas ("+").
 - `.wooden-dashboard` (resto da altura, `flex:1`) — 7 colunas lado a
   lado dentro de um frame de madeira único: **Moedas, Lembretes,
   Tarefas, Fazenda, Livros, Clima, Destaque**. `body` é
