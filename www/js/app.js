@@ -294,7 +294,8 @@ async function renderLembretesColumn(pending) {
         }
         <div class="lembretes-notes-divider hint">Notas rápidas</div>
         <div class="quick-add-row">
-          <input type="text" placeholder="+ nota (Enter)" onkeydown="if(event.key==='Enter') window.PsyduckApp.quickAddNote(this)" />
+          <input type="text" placeholder="+ nota" onkeydown="if(event.key==='Enter') window.PsyduckApp.quickAddNote(this)" />
+          <button class="quick-add-btn" onclick="window.PsyduckApp.quickAddNote(this.previousElementSibling)">OK</button>
         </div>
         ${
           notes
@@ -339,6 +340,7 @@ function renderTarefasColumn(pending, done) {
       <div class="column-content">
         <div class="quick-add-row">
           <input type="text" placeholder="+ Adicionar tarefa..." onkeydown="if(event.key==='Enter') window.PsyduckApp.quickAddTask(this)" />
+          <button class="quick-add-btn" onclick="window.PsyduckApp.quickAddTask(this.previousElementSibling)">OK</button>
         </div>
         ${pending.map(renderTaskRowMini).join("") || `<p class="empty">Tudo em dia!</p>`}
         ${
@@ -482,7 +484,8 @@ function renderLivrosColumn(books) {
           )
           .join("") || `<p class="empty">Nenhum livro ainda.</p>`}
         <div class="quick-add-row">
-          <input type="text" placeholder="+ livro (Enter)" onkeydown="if(event.key==='Enter') window.PsyduckApp.quickAddBook(this)" />
+          <input type="text" placeholder="+ livro" onkeydown="if(event.key==='Enter') window.PsyduckApp.quickAddBook(this)" />
+          <button class="quick-add-btn" onclick="window.PsyduckApp.quickAddBook(this.previousElementSibling)">OK</button>
         </div>
       </div>
       <div class="column-footer">

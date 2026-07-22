@@ -881,6 +881,19 @@ Adicionado:
 - A parte de tarefas-com-prazo continua exatamente igual, só ganhou
   uma companhia embaixo — não substituiu nada.
 
+**v0.1.24 (botão "OK" nos 3 campos de "+adicionar" — não só Enter)**:
+usuário perguntou "Enter no PC funciona, e no celular? Tem botão de
+confirmar?" — os 3 campos rápidos (Tarefas, Livros, Notas) só tinham
+`onkeydown` pro Enter, sem nenhum botão visível. Teclado virtual de
+celular normalmente manda um Enter de verdade (funcionava), mas sem
+pista nenhuma na tela de que isso confirma — nada óbvio de tocar.
+Adicionado `<button class="quick-add-btn">OK</button>` ao lado de cada
+input (Tarefas/Livros/Notas), chamando a mesma função de sempre com
+`this.previousElementSibling` (o próprio input). Enter continua
+funcionando igual, o botão é só mais um jeito, mais visível — testado
+via CDP num viewport de celular (375px): clique no botão adiciona
+certinho, sem estourar a largura da coluna.
+
 ## Onde ficam as coisas
 
 ```

@@ -487,6 +487,17 @@ textarea { min-height: 50px; resize: vertical; }
   padding: 6px 8px;
   box-sizing: border-box;
 }
+.quick-add-btn {
+  flex: 0 0 auto;
+  font-family: var(--font-pixel-display);
+  font-size: 0.6rem;
+  padding: 6px 10px;
+  border: 2px solid var(--border-wood);
+  border-radius: 2px;
+  background: var(--accent-orange);
+  color: #fff;
+  cursor: pointer;
+}
 
 /* moedas */
 .dash-level { font-family: var(--font-pixel-display); margin: 0 0 6px; font-size: 0.7rem; }
