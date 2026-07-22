@@ -145,12 +145,13 @@ async function renderWeatherColumn() {
   if (!data) {
     return `<section class="column col-clima"><div class="column-header">Clima</div><div class="column-content"><p class="empty">Não consegui buscar agora.</p></div></section>`;
   }
+  const sparkline = renderSparkline(data.hourlyTemps);
   return `
     <section class="column col-clima">
       <div class="column-header">Clima</div>
       <div class="column-content">
         <p class="dash-level">${Math.round(data.currentTemp)}°C</p>
-        ${renderSparkline(data.hourlyTemps)}
+        ${sparkline || '<p class="empty">Gráfico indisponível agora.</p>'}
         <p class="hint">Próximas horas</p>
       </div>
     </section>

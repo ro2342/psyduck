@@ -675,9 +675,46 @@ diferença é que aqui não tem o motivo técnico independente — o prédio
   automatizar), mas o erro anterior (`CONFIGURATION_NOT_FOUND`) deve
   estar resolvido agora.
 
+**v0.1.18 (bug real de corte de tela, achado com números — não só
+palpite)**: usuário reportou "falta grama" citando duas rects
+específicas do DOM (`grass-odd` em y=190, `grass-even` em y=194).
+Medido via CDP num viewport comum (1440×900): `.scene-container`
+(40vh) só mostrava até y≈191 do viewBox — ou seja, essas duas rects
+citadas ficavam bem na linha de corte, e nossos próprios elementos
+(`smallGarden`/`smallDog`/`smallLake`, então em y=188/197/195) ficavam
+**cortados pela metade** em qualquer tela comum, não só em telas
+muito largas. Corrigido com duas mudanças combinadas:
+- `.scene-container` de `40vh` pra `44vh` (mais respiro vertical,
+  custo pequeno na altura do dashboard).
+- `smallGarden`/`smallDog`/`smallLake` (`mascot.js`) movidos pra cima
+  (de y≈188-197 pra y≈168-177), já que são elementos nossos (não
+  vêm do arquivo de referência) — sem motivo pra ficarem bem na
+  fronteira do corte quando dá pra só posicionar mais alto na cena.
+  Medido de novo depois do fix: mesmo viewport comum agora mostra até
+  y≈199.6, cobrindo com folga tanto as rects que o usuário citou
+  quanto nossos elementos.
+- **Lição**: numa próxima reclamação de "sumiu X da cena", pedir a
+  largura/altura da janela do navegador (ou medir
+  `.scene-container.getBoundingClientRect()`) antes de mexer no
+  conteúdo do SVG — o corte por `preserveAspectRatio="slice"` depende
+  só da proporção da janela, então o mesmo código pode parecer
+  perfeito num teste e cortado na tela real do usuário.
+- **Clima "próximas horas" não reproduzido**: testei o fluxo
+  completo (`getWeatherData`, `renderWeatherColumn`) via CDP com
+  localização simulada — funcionou perfeitamente (gráfico apareceu
+  com 12 pontos). Não consegui reproduzir o bug relatado. Adicionada
+  uma rede de segurança em `weather.js`: se `renderSparkline` não
+  tiver pontos suficientes, mostra "Gráfico indisponível agora." em
+  vez de deixar um espaço em branco sem explicação — pelo menos assim
+  fica visível que algo falhou, em vez de silencioso. Se persistir,
+  próximo passo é pedir pro usuário abrir o DevTools (F12 → Console)
+  e mandar o que aparecer lá relacionado a "clima"/"weather".
+
 **Ainda pendente** (de sessões anteriores, não fez parte desta leva):
 acesso funcional de verdade aos métodos (Kanban de verdade, matriz de
-Eisenhower de verdade, não só pílulas/modal explicativo).
+Eisenhower de verdade, não só pílulas/modal explicativo) — usuário
+pediu de novo nesta sessão, aguardando decisão de como encaixar isso
+na arquitetura de tela única antes de construir.
 
 ## Onde ficam as coisas
 
