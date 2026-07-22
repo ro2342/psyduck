@@ -710,11 +710,68 @@ muito largas. Corrigido com duas mudanças combinadas:
   próximo passo é pedir pro usuário abrir o DevTools (F12 → Console)
   e mandar o que aparecer lá relacionado a "clima"/"weather".
 
-**Ainda pendente** (de sessões anteriores, não fez parte desta leva):
-acesso funcional de verdade aos métodos (Kanban de verdade, matriz de
-Eisenhower de verdade, não só pílulas/modal explicativo) — usuário
-pediu de novo nesta sessão, aguardando decisão de como encaixar isso
-na arquitetura de tela única antes de construir.
+**v0.1.19 (Kanban/Eisenhower de verdade + Pomodoro de verdade de
+volta + fix real da textura de grama)**:
+1. **Textura de grama não se estendia pra fora do 0-400 original**:
+   a extensão de "borda infinita" da v0.1.14 só tinha o preenchimento
+   sólido (`grass-main`) nas bordas — as 34 faixas alternadas
+   (`grass-odd`/`grass-even`, o textura "listrada" de verdade) continua
+   vam com `x="0" width="400"`, criando uma costura visível entre a
+   parte listrada (original) e a parte sólida (nossa extensão) em
+   qualquer tela mais larga que 400:225. Corrigido substituindo `x="0"
+   width="400"` por `x="-150" width="700"` nas 34 rects (dentro da
+   linha gigante colada de `cenario_pixel_art_16bit-v2.html` — troca
+   cirúrgica, confirmando a contagem exata de matches antes de
+   escrever, pra não arriscar corromper a linha de 65KB). Os dois
+   preenchimentos sólidos de grama nas bordas laterais (esquerda/
+   direita) viraram redundantes e foram removidos — só sobrou o
+   preenchimento sólido de baixo (bem abaixo do chão original, nunca
+   aparece listrado no arquivo de referência também).
+2. **Quadro Kanban/Eisenhower de verdade** (modal, botão "▦" no
+   cabeçalho da coluna Todos — usuário escolheu essa opção entre duas
+   propostas): `renderKanbanModal()` em `app.js`, com abas Kanban (3
+   colunas de verdade — A Fazer/Fazendo/Feito, cartão com botões ◀/▶
+   pra mover, respeitando o `kanbanWipLimit`) e Eisenhower (os 4
+   quadrantes de verdade, cartão com 4 botões curtos UI/II/UN/N pra
+   mover). As pílulas inline na coluna Todos continuam existindo (jeito
+   rápido de mudar uma tarefa só) — o modal é o jeito de ver o quadro
+   inteiro de uma vez, sem virar rota/página nova.
+3. **Pomodoro de verdade de volta** (botão "+" na cena, embaixo do "?"
+   de Métodos — pedido explícito do usuário): a classe `PomodoroTimer`
+   (removida na v0.1.9) foi reconstruída em `methods.js` com ciclo real
+   foco(25min)/pausa(5min), pausa longa(15min) a cada 4 ciclos. Pausa
+   começa sozinha (é o que faz o Pomodoro funcionar); a volta pro foco
+   espera o usuário clicar — decisão deliberada, forçar um novo ciclo
+   de trabalho sem aviso seria ruim pra quem tem TDAH. `renderTechniquesModal()`
+   novo em `app.js` mostra fase atual/contagem regressiva/ciclo, reusa
+   `onPomodoroCompleted()` (gamification.js, que já existia e já dava
+   XP+chance de pato, só não tinha nenhuma UI de ciclo automático
+   chamando ela). O timer de foco simples do rodapé de Livros (5/10/15/20min,
+   sem ciclo automático) continua existindo — são duas ferramentas
+   diferentes agora, não uma substituindo a outra.
+   - **Bug pego antes de subir**: o botão "Começar foco" ficava
+     branco-sobre-branco (invisível) — a classe `.inline-method-bar`
+     (reaproveitada do timer simples de Livros) tinha uma regra
+     `.inline-method-bar button { background: #fff; }` com
+     especificidade maior que `.btn-primary`, sobrescrevendo o fundo
+     laranja. Corrigido usando uma classe própria (`.pomodoro-controls`)
+     em vez de reaproveitar `.inline-method-bar`.
+   - **Testado via CDP**: ciclo completo simulado com durações curtas
+     (frações de segundo) confirmou a sequência exata
+     foco→pausa→foco→pausa longa→foco, contagem de ciclos correta, XP
+     e `pomodorosCompleted` incrementando via `onPomodoroCompleted`.
+   - **Armadilha de teste repetida nesta leva**: o service worker
+     re-registra e re-cacheia a cada navegação de teste — precisei
+     limpar (`getRegistrations()`/`unregister()` + `caches.delete`)
+     ANTES de cada verificação visual nova, inclusive no meio da mesma
+     sessão de testes, não só uma vez no início. Ver nota da v0.1.16.
+
+**Ainda pendente**: as outras técnicas que só têm pílula/timer simples
+(Time-Boxing, 1-3-5, Auditoria de Tempo, ABCD-Z, 80/20) não ganharam
+uma ferramenta de ciclo/quadro dedicada nesta leva — só Kanban/
+Eisenhower/Pomodoro pediram isso explicitamente até agora. Se o
+usuário pedir as outras, o modal de Técnicas (`renderTechniquesModal`)
+já está montado pra crescer com mais seções.
 
 ## Onde ficam as coisas
 
@@ -728,7 +785,7 @@ www/
     ├── db.js           ← IndexedDB. STORES: tasks, projects, timeAuditLog, profile, gamification, ducks, books, obsidianHandle
     ├── gamification.js ← cálculo de XP/nível/sequência/moedas, checagem de badge
     ├── mascot.js       ← mascote/patinhos/cena da fazenda (SVG pixel art desenhado à mão)
-    ├── methods.js      ← TimeboxTimer (timer de foco embutido), formatCountdown
+    ├── methods.js      ← TimeboxTimer (timer simples), PomodoroTimer (ciclo foco/pausa de verdade), formatCountdown
     ├── notifications.js ← Notification API best-effort (limitação documentada no README)
     ├── weather.js      ← card de clima (geolocalização + Open-Meteo, cache 30min)
     ├── obsidian.js     ← ponte com cofre local via File System Access API (só desktop Chrome/Edge)

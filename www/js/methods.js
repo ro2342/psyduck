@@ -61,4 +61,77 @@ class TimeboxTimer {
   }
 }
 
-window.PsyduckMethods = { formatCountdown, TimeboxTimer };
+// ---------- Pomodoro de verdade (ciclos foco/pausa automáticos) ----------
+// Removida na v0.1.9 (virou o TimeboxTimer genérico acima) e pedida de
+// volta pelo usuário na v0.1.19 — "faço por X minutos, pauso Y
+// minutos, repete", com pausa longa a cada 4 ciclos, igual a
+// descrição do método em data.js (METHOD_CONFIGS).
+class PomodoroTimer {
+  constructor({
+    workMinutes = 25,
+    breakMinutes = 5,
+    longBreakMinutes = 15,
+    cyclesBeforeLongBreak = 4,
+    onTick,
+    onPhaseChange,
+  } = {}) {
+    this.workMs = workMinutes * 60000;
+    this.breakMs = breakMinutes * 60000;
+    this.longBreakMs = longBreakMinutes * 60000;
+    this.cyclesBeforeLongBreak = cyclesBeforeLongBreak;
+    this.onTick = onTick || (() => {});
+    // (fasePronta, novaFase, ciclosCompletos) => void
+    this.onPhaseChange = onPhaseChange || (() => {});
+    this.phase = "work"; // work | break | longBreak
+    this.cyclesCompleted = 0;
+    this.remainingMs = this.workMs;
+    this.running = false;
+    this.interval = null;
+  }
+
+  start() {
+    if (this.running) return;
+    this.running = true;
+    this._endAt = Date.now() + this.remainingMs;
+    this.interval = setInterval(() => this._tick(), 250);
+  }
+
+  pause() {
+    this.running = false;
+    if (this.interval) clearInterval(this.interval);
+    this.remainingMs = Math.max(0, this._endAt - Date.now());
+  }
+
+  _tick() {
+    this.remainingMs = this._endAt - Date.now();
+    if (this.remainingMs <= 0) {
+      this.remainingMs = 0;
+      this.pause();
+      this._advancePhase();
+      return;
+    }
+    this.onTick(this.remainingMs, this.phase);
+  }
+
+  // Pausa começa sozinha (é isso que faz o Pomodoro funcionar); a
+  // volta pro foco espera o usuário clicar — forçar um novo ciclo de
+  // trabalho sem aviso seria ruim pra quem tem TDAH e precisa de um
+  // momento pra decidir retomar.
+  _advancePhase() {
+    const finishedPhase = this.phase;
+    if (finishedPhase === "work") {
+      this.cyclesCompleted += 1;
+      const isLong = this.cyclesCompleted % this.cyclesBeforeLongBreak === 0;
+      this.phase = isLong ? "longBreak" : "break";
+      this.remainingMs = isLong ? this.longBreakMs : this.breakMs;
+      this.onPhaseChange(finishedPhase, this.phase, this.cyclesCompleted);
+      this.start();
+    } else {
+      this.phase = "work";
+      this.remainingMs = this.workMs;
+      this.onPhaseChange(finishedPhase, this.phase, this.cyclesCompleted);
+    }
+  }
+}
+
+window.PsyduckMethods = { formatCountdown, TimeboxTimer, PomodoroTimer };

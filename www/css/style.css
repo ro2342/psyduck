@@ -249,6 +249,24 @@ textarea { min-height: 50px; resize: vertical; }
   font-size: 0.75rem;
   color: var(--text-main);
 }
+.techniques-btn {
+  position: absolute;
+  top: 94px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 2px;
+  border: 3px solid var(--border-wood);
+  background: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-pixel-display);
+  font-size: 0.9rem;
+  color: var(--text-main);
+}
 .window-title-icon { display: flex; align-items: center; gap: 8px; }
 
 .chip.rarity-comum { background: var(--border); }
@@ -310,6 +328,64 @@ textarea { min-height: 50px; resize: vertical; }
   flex-direction: column;
 }
 :root[data-theme="dark"] .window-frame { background: #3a2f22; }
+.window-frame--wide { max-width: 780px; }
+
+/* Quadro Kanban de verdade (modal aberto pelo botão da coluna Todos). */
+.kanban-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+.kanban-tabs .btn.active { background: var(--accent-orange); color: #fff; border-color: #a85210; }
+.kanban-board { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.kanban-col { flex: 1 1 0; min-width: 150px; background: var(--card-bg); border: 2px solid var(--border-wood); border-radius: 2px; }
+.kanban-col-header {
+  font-family: var(--font-pixel-display);
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  padding: 8px;
+  border-bottom: 2px solid var(--border-wood);
+  background: var(--border-wood);
+  color: #fff8ec;
+}
+.kanban-col-body { padding: 6px; display: flex; flex-direction: column; gap: 6px; min-height: 60px; }
+.kanban-card { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 2px; padding: 6px; font-size: 0.85rem; }
+.kanban-card p { margin: 0 0 4px; }
+.kanban-card-moves { display: flex; gap: 4px; }
+.kanban-card-moves button {
+  flex: 1;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  cursor: pointer;
+  padding: 3px;
+  font-size: 0.8rem;
+}
+.kanban-card-moves button:hover { background: var(--accent-orange); color: #fff; }
+
+.eisenhower-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.eisenhower-quad { background: var(--card-bg); border: 2px solid var(--border-wood); border-radius: 2px; }
+.eisenhower-quad-header {
+  font-family: var(--font-pixel-display);
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  padding: 8px;
+  border-bottom: 2px solid var(--border-wood);
+  background: var(--border-wood);
+  color: #fff8ec;
+}
+.eisenhower-quad-body { padding: 6px; display: flex; flex-direction: column; gap: 6px; min-height: 60px; }
+.eisenhower-card { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 2px; padding: 6px; font-size: 0.85rem; }
+.eisenhower-card p { margin: 0 0 4px; }
+.eisenhower-card-moves { display: flex; gap: 3px; flex-wrap: wrap; }
+.eisenhower-card-moves button {
+  flex: 1 1 auto;
+  min-width: 28px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  cursor: pointer;
+  padding: 3px;
+  font-size: 0.72rem;
+}
+.eisenhower-card-moves button.active { background: var(--accent-orange); color: #fff; }
+.eisenhower-card-moves button:hover { background: var(--accent-orange); color: #fff; }
 .window-title-bar {
   background: var(--scene-trunk);
   color: #fdf6ea;
@@ -378,6 +454,18 @@ textarea { min-height: 50px; resize: vertical; }
   gap: 6px;
 }
 .column-header .info-icon { cursor: help; opacity: 0.85; font-size: 0.85em; }
+.column-header .board-btn {
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: inherit;
+  font-family: inherit;
+  font-size: 0.9em;
+  padding: 2px 6px;
+  cursor: pointer;
+  border-radius: 2px;
+}
+.column-header .board-btn:hover { background: rgba(255, 255, 255, 0.15); }
 
 .column-content {
   flex: 1;
@@ -539,6 +627,13 @@ textarea { min-height: 50px; resize: vertical; }
   font-weight: 700;
 }
 .timer-display-mini { font-variant-numeric: tabular-nums; font-weight: 800; margin-left: 4px; }
+.timer-display-big {
+  font-family: var(--font-pixel-display);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.8rem;
+  margin: 4px 0;
+}
+.pomodoro-controls { display: flex; gap: 8px; }
 
 /* clima */
 .weather-sparkline { width: 100%; height: 26px; margin: 4px 0; }

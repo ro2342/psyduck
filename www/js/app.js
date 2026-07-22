@@ -1,16 +1,23 @@
 // app.js — Psyduck v0.2.0: dashboard de tela única, sem bottom-nav, sem
 // páginas separadas. Tudo (tarefas, métodos, clima, livros, humor) vive
-// dentro das colunas de madeira ao mesmo tempo. O único "modal de troca
-// de tela" permitido é o de Ajustes (ícone de engrenagem no canto da
-// cena). Kanban/Eisenhower/1-3-5/Pomodoro/Time-Boxing/Auditoria de
-// Tempo, que antes eram telas próprias, agora são controles em
-// miniatura dentro da linha de cada tarefa ou no rodapé de uma coluna —
-// decisão explícita do usuário, aceitando que ficam mais limitados.
+// dentro das colunas de madeira ao mesmo tempo. Os "modais de troca de
+// tela" permitidos são: Ajustes (engrenagem), Métodos (cheat sheet,
+// botão "?") e Kanban/Eisenhower de verdade (botão "▦" na coluna
+// Todos) — todos janelas por cima do dashboard, nunca uma rota nova.
+// 1-3-5/Pomodoro/Time-Boxing/Auditoria de Tempo continuam como
+// controles em miniatura na linha de cada tarefa ou no rodapé de uma
+// coluna — decisão explícita do usuário, aceitando que ficam mais
+// limitados; só Kanban/Eisenhower ganharam o quadro de verdade de volta
+// (pedido explícito do usuário, v0.1.19).
 
 const root = document.getElementById("app");
 let settingsOpen = false;
 let methodsOpen = false;
+let kanbanModalOpen = false;
+let kanbanModalTab = "kanban";
+let techniquesOpen = false;
 let focusTimer = null; // TimeboxTimer ativo (rodapé da coluna Livros)
+let pomodoro = null; // PomodoroTimer ativo (modal de Técnicas)
 
 // Ícone de engrenagem em pixel art (retângulos, mesma técnica do
 // mascot.js) — substitui o emoji nativo ⚙️, que quebrava a ilusão de
@@ -148,6 +155,7 @@ async function render() {
           <div class="scene-foreground" id="sceneForeground"></div>
           <button class="settings-btn" data-action="open-settings" aria-label="Ajustes">${pixelGearSvg(18)}</button>
           <button class="methods-btn" data-action="open-methods" aria-label="Métodos">?</button>
+          <button class="techniques-btn" data-action="open-techniques" aria-label="Técnicas (Pomodoro e outras)">+</button>
         </section>
         <div class="wooden-dashboard" id="woodenDashboard"></div>
       </div>
@@ -186,6 +194,8 @@ async function render() {
   document.getElementById("modalRoot").innerHTML = `
     ${settingsOpen ? await renderSettingsModal() : ""}
     ${methodsOpen ? renderMethodsModal() : ""}
+    ${kanbanModalOpen ? await renderKanbanModal() : ""}
+    ${techniquesOpen ? renderTechniquesModal() : ""}
   `;
 }
 
@@ -317,6 +327,7 @@ function renderTarefasColumn(pending, done) {
       <div class="column-header">
         Todos
         <span class="info-icon" title="Regra dos 2 Minutos: se leva menos de 2min, marque a tag '2min' e faça agora.">ⓘ</span>
+        <button class="board-btn" data-action="open-kanban" title="Abrir quadro Kanban/Eisenhower">▦</button>
       </div>
       <div class="column-content">
         <div class="quick-add-row">
@@ -586,6 +597,54 @@ const actions = {
     if (focusTimer) focusTimer.pause();
     render();
   },
+  "open-techniques"() {
+    techniquesOpen = true;
+    render();
+  },
+  "close-techniques"() {
+    techniquesOpen = false;
+    render();
+  },
+  "pomodoro-start"() {
+    if (!pomodoro) {
+      pomodoro = new window.PsyduckMethods.PomodoroTimer({
+        onTick: () => updatePomodoroDisplay(),
+        onPhaseChange: async (finishedPhase, nextPhase, cyclesCompleted) => {
+          if (finishedPhase === "work") {
+            const isLong = nextPhase === "longBreak";
+            window.PsyduckNotifications.notifyNow(
+              "Foco concluído!",
+              isLong ? "Pausa longa de 15 minutos." : "Pausa de 5 minutos."
+            );
+            const result = await window.PsyduckGamification.onPomodoroCompleted();
+            flashToast(
+              result.leveledUp
+                ? `Subiu pro nível ${result.state.level}!`
+                : isLong
+                ? `Ciclo ${cyclesCompleted} completo — pausa longa!`
+                : "+15 XP — foco concluído, pausa de 5min"
+            );
+            if (result.newDuck) showDuckModal(result.newDuck, { justHatched: true });
+          } else {
+            window.PsyduckNotifications.notifyNow("Pausa acabou", "Quando quiser, comece o próximo foco.");
+            flashToast("Pausa acabou — comece o próximo foco quando estiver pronto.");
+          }
+          render();
+        },
+      });
+    }
+    pomodoro.start();
+    render();
+  },
+  "pomodoro-pause"() {
+    if (pomodoro) pomodoro.pause();
+    render();
+  },
+  "pomodoro-reset"() {
+    if (pomodoro) pomodoro.pause();
+    pomodoro = null;
+    render();
+  },
   async "show-duck"(el) {
     const duck = await window.PsyduckDB.dbGet(window.PsyduckDB.STORES.ducks, el.dataset.id);
     if (duck) showDuckModal(duck, { justHatched: false });
@@ -613,6 +672,55 @@ const actions = {
     methodsOpen = false;
     render();
   },
+  "open-kanban"() {
+    kanbanModalOpen = true;
+    kanbanModalTab = "kanban";
+    render();
+  },
+  "close-kanban"() {
+    kanbanModalOpen = false;
+    render();
+  },
+  "kanban-tab"(el) {
+    kanbanModalTab = el.dataset.tab;
+    render();
+  },
+  async "kanban-move"(el) {
+    const task = await window.PsyduckDB.dbGet(window.PsyduckDB.STORES.tasks, el.dataset.id);
+    if (!task) return;
+    const target = el.dataset.column;
+    if (target === "doing") {
+      const all = await window.PsyduckDB.listTasks();
+      const doingCount = all.filter((x) => x.kanbanColumn === "doing" && !x.done && x.id !== task.id).length;
+      const wip = Number((await window.PsyduckDB.getSetting("kanbanWipLimit", 3)) || 3);
+      if (doingCount >= wip) {
+        flashToast(`Limite de "Fazendo" é ${wip} — termine algo antes.`);
+        return;
+      }
+    }
+    task.kanbanColumn = target;
+    if (target === "done" && !task.done) {
+      task.done = true;
+      task.doneAt = new Date().toISOString();
+      await window.PsyduckDB.saveTask(task);
+      await celebrateCompletion(task);
+      render();
+      return;
+    }
+    if (target !== "done" && task.done) {
+      task.done = false;
+      task.doneAt = null;
+    }
+    await window.PsyduckDB.saveTask(task);
+    render();
+  },
+  async "eisenhower-move"(el) {
+    const task = await window.PsyduckDB.dbGet(window.PsyduckDB.STORES.tasks, el.dataset.id);
+    if (!task) return;
+    task.eisenhowerQuadrant = el.dataset.quadrant || null;
+    await window.PsyduckDB.saveTask(task);
+    render();
+  },
   async "obsidian-connect"() {
     try {
       await window.PsyduckObsidian.connectVault();
@@ -638,6 +746,43 @@ const actions = {
 function updateFocusTimerDisplay() {
   const el = document.querySelector(".timer-display-mini");
   if (el && focusTimer) el.textContent = formatMs(focusTimer.remainingMs);
+}
+
+function updatePomodoroDisplay() {
+  const el = document.querySelector("#pomodoroDisplay");
+  if (el && pomodoro) el.textContent = formatMs(pomodoro.remainingMs);
+}
+
+const POMODORO_PHASE_LABELS = { work: "FOCO", break: "PAUSA", longBreak: "PAUSA LONGA" };
+
+function renderTechniquesModal() {
+  const phase = pomodoro ? pomodoro.phase : "work";
+  const remaining = pomodoro ? pomodoro.remainingMs : 25 * 60000;
+  const cycles = pomodoro ? pomodoro.cyclesCompleted : 0;
+  const running = pomodoro ? pomodoro.running : false;
+  return `
+    <div class="modal-overlay show">
+      <div class="window-frame">
+        <div class="window-title-bar">
+          <span>Técnicas</span>
+          <button class="window-close-btn" data-action="close-techniques">X</button>
+        </div>
+        <div class="window-body">
+          <section class="window-section">
+            <h2>Pomodoro</h2>
+            <p class="hint">Foco de 25min, pausa de 5min — a cada 4 ciclos, pausa longa de 15min. A pausa começa sozinha; o próximo foco espera você clicar.</p>
+            <p class="dash-level">${POMODORO_PHASE_LABELS[phase]}</p>
+            <p class="timer-display-big" id="pomodoroDisplay">${formatMs(remaining)}</p>
+            <p class="hint">Ciclo ${cycles} de 4</p>
+            <div class="pomodoro-controls">
+              ${running ? `<button class="btn" data-action="pomodoro-pause">Pausar</button>` : `<button class="btn btn-primary" data-action="pomodoro-start">${pomodoro ? "Continuar" : "Começar foco"}</button>`}
+              ${pomodoro ? `<button class="btn" data-action="pomodoro-reset">Reiniciar</button>` : ""}
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 root.addEventListener("click", (e) => {
@@ -760,6 +905,102 @@ function renderMethodsModal() {
       </div>
     </div>
   `;
+}
+
+// ---------- modal de Kanban/Eisenhower de verdade ----------
+// Pedido explícito do usuário (v0.1.19): as pílulas inline continuam
+// existindo (jeito rápido de mudar uma tarefa só), mas agora também dá
+// pra ver o quadro inteiro — 3 colunas de verdade ou os 4 quadrantes —
+// numa janela por cima do dashboard, sem virar rota/página nova.
+
+async function renderKanbanModal() {
+  const allTasks = await window.PsyduckDB.listTasks();
+  const body =
+    kanbanModalTab === "kanban" ? renderKanbanBoard(allTasks) : renderEisenhowerBoard(allTasks.filter((t) => !t.done));
+  return `
+    <div class="modal-overlay show">
+      <div class="window-frame window-frame--wide">
+        <div class="window-title-bar">
+          <span>Quadro</span>
+          <button class="window-close-btn" data-action="close-kanban">X</button>
+        </div>
+        <div class="window-body">
+          <div class="kanban-tabs">
+            <button class="btn ${kanbanModalTab === "kanban" ? "active" : ""}" data-action="kanban-tab" data-tab="kanban">Kanban</button>
+            <button class="btn ${kanbanModalTab === "eisenhower" ? "active" : ""}" data-action="kanban-tab" data-tab="eisenhower">Eisenhower</button>
+          </div>
+          ${body}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderKanbanBoard(allTasks) {
+  const cols = KANBAN_STATES.map(([key, label]) => {
+    const colTasks = allTasks.filter((t) => (t.kanbanColumn || "todo") === key && !t.deleted);
+    const idx = KANBAN_STATES.findIndex((s) => s[0] === key);
+    const cards = colTasks
+      .map((t) => {
+        const prevKey = idx > 0 ? KANBAN_STATES[idx - 1][0] : null;
+        const nextKey = idx < KANBAN_STATES.length - 1 ? KANBAN_STATES[idx + 1][0] : null;
+        return `
+          <div class="kanban-card">
+            <p>${escapeHtml(t.title)}</p>
+            <div class="kanban-card-moves">
+              ${prevKey ? `<button data-action="kanban-move" data-id="${t.id}" data-column="${prevKey}">◀</button>` : ""}
+              ${nextKey ? `<button data-action="kanban-move" data-id="${t.id}" data-column="${nextKey}">▶</button>` : ""}
+            </div>
+          </div>
+        `;
+      })
+      .join("");
+    return `
+      <div class="kanban-col">
+        <div class="kanban-col-header">${label} (${colTasks.length})</div>
+        <div class="kanban-col-body">${cards || '<p class="empty">Vazio.</p>'}</div>
+      </div>
+    `;
+  }).join("");
+  return `<div class="kanban-board">${cols}</div>`;
+}
+
+const EISENHOWER_QUAD_LABELS = {
+  "urgent-important": "Urgente + importante",
+  "not-urgent-important": "Importante, não urgente",
+  "urgent-not-important": "Urgente, não importante",
+  neither: "Nem urgente nem importante",
+};
+
+function renderEisenhowerBoard(pendingTasks) {
+  const quads = EISENHOWER_STATES.filter((s) => s[0] !== null).map(([key]) => {
+    const label = EISENHOWER_QUAD_LABELS[key];
+    const quadTasks = pendingTasks.filter((t) => t.eisenhowerQuadrant === key);
+    const cards = quadTasks
+      .map(
+        (t) => `
+          <div class="eisenhower-card">
+            <p>${escapeHtml(t.title)}</p>
+            <div class="eisenhower-card-moves">
+              ${EISENHOWER_STATES.filter((s) => s[0] !== null)
+                .map(
+                  ([qKey, qLabel]) =>
+                    `<button class="${qKey === key ? "active" : ""}" data-action="eisenhower-move" data-id="${t.id}" data-quadrant="${qKey}">${qLabel}</button>`
+                )
+                .join("")}
+            </div>
+          </div>
+        `
+      )
+      .join("");
+    return `
+      <div class="eisenhower-quad">
+        <div class="eisenhower-quad-header">${label} (${quadTasks.length})</div>
+        <div class="eisenhower-quad-body">${cards || '<p class="empty">Vazio.</p>'}</div>
+      </div>
+    `;
+  }).join("");
+  return `<div class="eisenhower-grid">${quads}</div>`;
 }
 
 // ---------- modal de ajustes (o único modal permitido) ----------
