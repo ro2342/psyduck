@@ -903,7 +903,7 @@ function renderMethodsModal() {
           <button class="window-close-btn" data-action="close-methods">X</button>
         </div>
         <div class="window-body">
-          <p class="hint">Nenhum precisa ser seguido à risca. Os controles de cada um ficam nas pílulas da coluna Todos ou no rodapé de Livros (timer de foco).</p>
+          <p class="hint">Nenhum precisa ser seguido à risca.</p>
           ${window.PsyduckData.METHOD_CONFIGS
             .map(
               (m) => `
@@ -911,6 +911,7 @@ function renderMethodsModal() {
               <h2>${m.name}</h2>
               <p class="method-short">${escapeHtml(m.short)}</p>
               <p class="hint">${escapeHtml(m.explanation)}</p>
+              <p class="method-where">Onde usar: ${escapeHtml(m.where)}</p>
             </section>`
             )
             .join("")}

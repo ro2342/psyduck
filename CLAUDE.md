@@ -811,6 +811,29 @@ de input responsivo)**:
    (mesma classe é usada pelo campo de "+ Adicionar tarefa", corrigido
    de brinde).
 
+**v0.1.21 (modal de Métodos agora diz ONDE usar cada técnica + input
+já estava corrigido, era cache)**:
+1. **"Cadê esses negócios pra eu fazer?"**: usuário colou o texto
+   inteiro do modal de Métodos e perguntou onde de fato usar cada
+   técnica — o modal só tinha nome + explicação, nenhuma pista de onde
+   na tela aquilo vira controle de verdade. Cada entrada de
+   `METHOD_CONFIGS` (`data.js`) ganhou um campo `where` (substituindo
+   `route`/`builtin`, dois campos mortos desde a v0.1.9 — sobra do
+   roteador antigo, nunca lidos em lugar nenhum do código atual) com
+   uma frase direta tipo "Pílula (—/A/B/C/D) em cada tarefa, na coluna
+   Todos." `renderMethodsModal()` mostra isso como "Onde usar: ..." em
+   laranja, logo depois da explicação de cada método.
+2. **Input de "+livro"/"+tarefa" "ainda não muda de tamanho"**:
+   confirmado via CDP num viewport de celular de verdade (375px,
+   perfil limpo) que o CSS da v0.1.20 (`min-width: 0; width: 100%`)
+   **já resolve isso** — os dois inputs medem exatamente a largura do
+   container, sem sobra nem overflow. O usuário reportou o mesmo bug
+   de novo bem depois do deploy, então o mais provável é ele ainda
+   estar vendo a versão cacheada pelo service worker (mesma armadilha
+   já documentada nas v0.1.16/v0.1.19) — não uma regressão nova. Se
+   reportar de novo depois de forçar atualização em Ajustes, aí sim
+   investigar mais a fundo.
+
 ## Onde ficam as coisas
 
 ```

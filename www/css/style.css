@@ -380,6 +380,7 @@ textarea { min-height: 50px; resize: vertical; }
 .window-section { padding: 12px 0; border-bottom: 2px dashed var(--border-wood); }
 .window-section:last-child { border-bottom: none; }
 .window-section h2 { margin: 0 0 8px; font-size: 0.95rem; }
+.method-where { font-size: 0.8rem; font-weight: 700; color: var(--accent-orange); margin: 6px 0 0; }
 
 /* ---------- dashboard de madeira (colunas, ~58vh) ---------- */
 

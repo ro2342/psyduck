@@ -1,7 +1,7 @@
 // data.js — fonte única de texto de interface e configuração dos métodos.
 // Nada de lógica aqui, só dados (mesmo papel do data.js do theartistsway).
 
-const APP_VERSION = "0.1.20";
+const APP_VERSION = "0.1.21";
 
 const UI_STRINGS = {
   appName: "Psyduck",
@@ -53,8 +53,7 @@ const METHOD_CONFIGS = [
     short: "Eu faço *tarefa* de *hora início* até *hora fim*.",
     explanation:
       "Reserve blocos fixos de tempo na sua agenda pra tarefas ou tipos de atividade específicos. Reduz a sobrecarga de decidir o que fazer a cada minuto — e evita, por exemplo, checar e-mail 30 vezes por hora.",
-    route: "#/tasks",
-    builtin: true,
+    where: "Campo de prazo de cada tarefa, na coluna Todos.",
   },
   {
     id: "pomodoro",
@@ -62,7 +61,7 @@ const METHOD_CONFIGS = [
     short: "Eu faço *tarefa* por *x minutos*, depois pauso *x minutos*. Repete.",
     explanation:
       "Trabalhe por um período fixo (10 a 30 minutos), depois faça uma pausa de 5 a 10 minutos. A cada 4 ciclos, uma pausa mais longa.",
-    route: "#/pomodoro",
+    where: 'Botão "+" na cena → aba Pomodoro (ciclo automático de verdade).',
   },
   {
     id: "twoMinute",
@@ -70,8 +69,7 @@ const METHOD_CONFIGS = [
     short: "Se *tarefa* leva menos de 2 minutos, eu faço agora.",
     explanation:
       "Se algo leva menos de dois minutos, faça na hora. Ajuda a limpar tarefinhas pequenas antes que elas se acumulem.",
-    route: "#/tasks?filter=twoMinute",
-    builtin: true,
+    where: 'Chip "2min" em cada tarefa, na coluna Todos.',
   },
   {
     id: "eisenhower",
@@ -79,7 +77,7 @@ const METHOD_CONFIGS = [
     short: "Um quadro que organiza tarefas por urgência e importância.",
     explanation:
       "Quatro quadrantes: Urgente+Importante (faça agora), Importante mas não urgente (decida quando fazer), Urgente mas não importante (delegue), nem urgente nem importante (faça depois). Tudo bem se o Wordle for urgente e importante.",
-    route: "#/eisenhower",
+    where: 'Pílula (UI/II/UN/N) em cada tarefa, ou botão "+" na cena → aba Eisenhower (os 4 quadrantes de verdade).',
   },
   {
     id: "abcdz",
@@ -87,8 +85,7 @@ const METHOD_CONFIGS = [
     short: "Cada tarefa ganha uma letra de prioridade/dificuldade.",
     explanation:
       "A = maior prioridade/maior dor de cabeça, B = um pouco menos, e assim por diante. Priorizar é difícil pra muita gente — inclusive pra quem criou esse método — mas ajuda bastante quem consegue usar.",
-    route: "#/tasks?sort=priority",
-    builtin: true,
+    where: "Pílula de prioridade (—/A/B/C/D) em cada tarefa, na coluna Todos.",
   },
   {
     id: "timeAuditing",
@@ -96,7 +93,7 @@ const METHOD_CONFIGS = [
     short: "Registre como você gasta seu tempo e revise depois de 1-2 semanas.",
     explanation:
       "Anote como o seu tempo foi gasto ao longo do dia. Depois de uma ou duas semanas, revise de verdade pra descobrir onde reorganizar prioridades.",
-    route: "#/time-audit",
+    where: "Formulário no rodapé da coluna Moedas (atividade + minutos).",
   },
   {
     id: "kanban",
@@ -104,7 +101,7 @@ const METHOD_CONFIGS = [
     short: "Cartões num quadro visual: A Fazer, Fazendo, Feito.",
     explanation:
       "Visualize o trabalho num quadro com colunas. Limite quantas tarefas podem estar 'Fazendo' ao mesmo tempo pra não se sobrecarregar.",
-    route: "#/kanban",
+    where: 'Pílula (A FAZER/FAZENDO/FEITO) em cada tarefa, ou botão "+" na cena → aba Kanban (também pelo botão "▦" na coluna Todos).',
   },
   {
     id: "timeboxing",
@@ -112,7 +109,7 @@ const METHOD_CONFIGS = [
     short: "Reserve um tempo fixo pra uma tarefa chata e pare quando acabar.",
     explanation:
       "Dê um tempo fixo pra uma tarefa e pare de trabalhar nela quando o tempo acabar. Ótimo pra tarefas chatas — cinco minutos rendem muito mais do que parece, tipo lavar a louça.",
-    route: "#/timeboxing",
+    where: "Temporizador FOCO no rodapé da coluna Livros (botões 5/10/15/20min).",
   },
   {
     id: "oneThreeFive",
@@ -120,7 +117,7 @@ const METHOD_CONFIGS = [
     short: "Escolha 1 tarefa grande, 3 médias e 5 pequenas por dia.",
     explanation:
       "Todo dia, escolha uma tarefa grande, três médias e cinco pequenas pra focar. Simples de montar e fácil de olhar de novo no meio do dia.",
-    route: "#/one-three-five",
+    where: 'Pílula ("1 GDE"/MÉDIA/PEQ) em cada tarefa, na coluna Todos.',
   },
   {
     id: "paretoRule",
@@ -128,8 +125,7 @@ const METHOD_CONFIGS = [
     short: "Foque nos 20% de tarefas que geram 80% do resultado.",
     explanation:
       "Identifique e foque nas tarefas de alto impacto. Tente eliminar ou delegar o que não importa tanto ou só consome tempo.",
-    route: "#/tasks?filter=highImpact",
-    builtin: true,
+    where: "Chip de alto impacto em cada tarefa, na coluna Todos.",
   },
 ];
 
