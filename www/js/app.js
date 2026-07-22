@@ -311,13 +311,6 @@ const EISENHOWER_STATES = [
   ["urgent-not-important", "UN"],
   ["neither", "N"],
 ];
-const OTF_STATES = [
-  [null, "—"],
-  ["big", "1 GDE"],
-  ["medium", "MÉDIA"],
-  ["small", "PEQ"],
-];
-const PRIORITY_STATES = [null, "A", "B", "C", "D"];
 
 function renderTarefasColumn(pending, done) {
   return `
@@ -350,10 +343,26 @@ function renderTarefasColumn(pending, done) {
   `;
 }
 
+// Selects com o nome inteiro em vez de pílulas cicláveis com sigla
+// (UI/II/UN/N etc.) — usuário apontou que dava pra saber o que cada
+// uma fazia só passando o mouse, e no celular isso nem existe. Select
+// nativo já resolve sozinho (some com o problema de espaço — o
+// dropdown do sistema mostra o texto inteiro) e funciona igual em
+// touch. As duas regras booleanas (2min/80-20) viraram checkbox com
+// rótulo escrito ao lado, pelo mesmo motivo.
+function taskSelect({ id, action, options, value, label }) {
+  const opts = options
+    .map(([optValue, optLabel]) => `<option value="${optValue ?? ""}" ${(optValue ?? "") === (value ?? "") ? "selected" : ""}>${escapeHtml(optLabel)}</option>`)
+    .join("");
+  return `
+    <label class="task-mini-field">
+      <span class="task-mini-field-label">${label}</span>
+      <select data-id="${id}" onchange="window.PsyduckApp.${action}(this)">${opts}</select>
+    </label>
+  `;
+}
+
 function renderTaskRowMini(t) {
-  const kanbanLabel = (KANBAN_STATES.find((s) => s[0] === (t.kanbanColumn || "todo")) || KANBAN_STATES[0])[1];
-  const eisenhowerLabel = (EISENHOWER_STATES.find((s) => s[0] === t.eisenhowerQuadrant) || EISENHOWER_STATES[0])[1];
-  const otfLabel = (OTF_STATES.find((s) => s[0] === t.oneThreeFiveSlot) || OTF_STATES[0])[1];
   return `
     <div class="task-row-mini ${t.done ? "done" : ""}">
       <div class="task-mini-top">
@@ -362,12 +371,59 @@ function renderTaskRowMini(t) {
         <button class="mini-pill" data-action="task-delete" data-id="${t.id}" title="Excluir">🗑</button>
       </div>
       <div class="task-mini-controls">
-        <button class="mini-pill" data-action="cycle-priority" data-id="${t.id}" title="Prioridade ABCD-Z">${t.priorityLetter || "—"}</button>
-        <button class="mini-pill" data-action="cycle-kanban" data-id="${t.id}" title="Kanban">${kanbanLabel}</button>
-        <button class="mini-pill" data-action="cycle-eisenhower" data-id="${t.id}" title="Matriz de Eisenhower">${eisenhowerLabel}</button>
-        <button class="mini-pill" data-action="cycle-otf" data-id="${t.id}" title="Regra 1-3-5">${otfLabel}</button>
-        <button class="mini-pill ${t.isTwoMinuteTask ? "active" : ""}" data-action="toggle-two-min" data-id="${t.id}" title="Regra dos 2 Minutos">2min</button>
-        <button class="mini-pill ${t.paretoHighImpact ? "active" : ""}" data-action="toggle-pareto" data-id="${t.id}" title="Regra 80/20">80/20</button>
+        ${taskSelect({
+          id: t.id,
+          action: "setTaskPriority",
+          label: "Prioridade",
+          value: t.priorityLetter || "",
+          options: [
+            ["", "— Sem prioridade"],
+            ["A", "A — Maior prioridade"],
+            ["B", "B — Alta"],
+            ["C", "C — Média"],
+            ["D", "D — Baixa"],
+          ],
+        })}
+        ${taskSelect({
+          id: t.id,
+          action: "setTaskKanban",
+          label: "Kanban",
+          value: t.kanbanColumn || "todo",
+          options: KANBAN_STATES.map(([v, l]) => [v, l.charAt(0) + l.slice(1).toLowerCase()]),
+        })}
+        ${taskSelect({
+          id: t.id,
+          action: "setTaskEisenhower",
+          label: "Eisenhower",
+          value: t.eisenhowerQuadrant || "",
+          options: [
+            ["", "— Sem quadrante"],
+            ["urgent-important", "Urgente + importante"],
+            ["not-urgent-important", "Importante, não urgente"],
+            ["urgent-not-important", "Urgente, não importante"],
+            ["neither", "Nem urgente nem importante"],
+          ],
+        })}
+        ${taskSelect({
+          id: t.id,
+          action: "setTaskOtf",
+          label: "Regra 1-3-5",
+          value: t.oneThreeFiveSlot || "",
+          options: [
+            ["", "— Fora do 1-3-5"],
+            ["big", "Grande (a 1 do dia)"],
+            ["medium", "Média (uma das 3)"],
+            ["small", "Pequena (uma das 5)"],
+          ],
+        })}
+        <label class="task-mini-checkbox">
+          <input type="checkbox" data-id="${t.id}" ${t.isTwoMinuteTask ? "checked" : ""} onchange="window.PsyduckApp.setTaskTwoMin(this)" />
+          Regra dos 2 minutos
+        </label>
+        <label class="task-mini-checkbox">
+          <input type="checkbox" data-id="${t.id}" ${t.paretoHighImpact ? "checked" : ""} onchange="window.PsyduckApp.setTaskPareto(this)" />
+          Alto impacto (80/20)
+        </label>
       </div>
     </div>
   `;
@@ -496,73 +552,6 @@ const actions = {
   async "task-delete"(el) {
     if (!confirm("Excluir essa tarefa?")) return;
     await window.PsyduckDB.deleteTask(el.dataset.id);
-    render();
-  },
-  async "cycle-priority"(el) {
-    const task = await window.PsyduckDB.dbGet(window.PsyduckDB.STORES.tasks, el.dataset.id);
-    if (!task) return;
-    const idx = PRIORITY_STATES.indexOf(task.priorityLetter || null);
-    task.priorityLetter = PRIORITY_STATES[(idx + 1) % PRIORITY_STATES.length];
-    task.xpValue = task.priorityLetter === "A" ? 20 : task.priorityLetter === "B" ? 15 : 10;
-    await window.PsyduckDB.saveTask(task);
-    render();
-  },
-  async "cycle-kanban"(el) {
-    const task = await window.PsyduckDB.dbGet(window.PsyduckDB.STORES.tasks, el.dataset.id);
-    if (!task) return;
-    const idx = KANBAN_STATES.findIndex((s) => s[0] === (task.kanbanColumn || "todo"));
-    const nextState = KANBAN_STATES[(idx + 1) % KANBAN_STATES.length][0];
-    if (nextState === "doing") {
-      const all = await window.PsyduckDB.listTasks();
-      const doingCount = all.filter((x) => x.kanbanColumn === "doing" && !x.done).length;
-      const wip = Number((await window.PsyduckDB.getSetting("kanbanWipLimit", 3)) || 3);
-      if (doingCount >= wip) {
-        flashToast(`Limite de "Fazendo" é ${wip} — termine algo antes.`);
-        return;
-      }
-    }
-    task.kanbanColumn = nextState;
-    if (nextState === "done" && !task.done) {
-      task.done = true;
-      task.doneAt = new Date().toISOString();
-      await window.PsyduckDB.saveTask(task);
-      await celebrateCompletion(task);
-      render();
-      return;
-    }
-    await window.PsyduckDB.saveTask(task);
-    render();
-  },
-  async "cycle-eisenhower"(el) {
-    const task = await window.PsyduckDB.dbGet(window.PsyduckDB.STORES.tasks, el.dataset.id);
-    if (!task) return;
-    const idx = EISENHOWER_STATES.findIndex((s) => s[0] === task.eisenhowerQuadrant);
-    task.eisenhowerQuadrant = EISENHOWER_STATES[(idx + 1) % EISENHOWER_STATES.length][0];
-    await window.PsyduckDB.saveTask(task);
-    render();
-  },
-  async "cycle-otf"(el) {
-    const task = await window.PsyduckDB.dbGet(window.PsyduckDB.STORES.tasks, el.dataset.id);
-    if (!task) return;
-    const idx = OTF_STATES.findIndex((s) => s[0] === task.oneThreeFiveSlot);
-    const next = OTF_STATES[(idx + 1) % OTF_STATES.length][0];
-    task.oneThreeFiveSlot = next;
-    task.oneThreeFiveDate = next ? todayKey() : null;
-    await window.PsyduckDB.saveTask(task);
-    render();
-  },
-  async "toggle-two-min"(el) {
-    const task = await window.PsyduckDB.dbGet(window.PsyduckDB.STORES.tasks, el.dataset.id);
-    if (!task) return;
-    task.isTwoMinuteTask = !task.isTwoMinuteTask;
-    await window.PsyduckDB.saveTask(task);
-    render();
-  },
-  async "toggle-pareto"(el) {
-    const task = await window.PsyduckDB.dbGet(window.PsyduckDB.STORES.tasks, el.dataset.id);
-    if (!task) return;
-    task.paretoHighImpact = !task.paretoHighImpact;
-    await window.PsyduckDB.saveTask(task);
     render();
   },
   async "book-advance"(el) {
@@ -861,6 +850,80 @@ async function saveReflectionNote(input) {
   await window.PsyduckDB.saveTask(task);
 }
 
+async function setTaskPriority(select) {
+  const task = await window.PsyduckDB.dbGet(window.PsyduckDB.STORES.tasks, select.dataset.id);
+  if (!task) return;
+  task.priorityLetter = select.value || null;
+  task.xpValue = task.priorityLetter === "A" ? 20 : task.priorityLetter === "B" ? 15 : 10;
+  await window.PsyduckDB.saveTask(task);
+  render();
+}
+
+async function setTaskKanban(select) {
+  const task = await window.PsyduckDB.dbGet(window.PsyduckDB.STORES.tasks, select.dataset.id);
+  if (!task) return;
+  const nextState = select.value;
+  if (nextState === "doing") {
+    const all = await window.PsyduckDB.listTasks();
+    const doingCount = all.filter((x) => x.kanbanColumn === "doing" && !x.done && x.id !== task.id).length;
+    const wip = Number((await window.PsyduckDB.getSetting("kanbanWipLimit", 3)) || 3);
+    if (doingCount >= wip) {
+      flashToast(`Limite de "Fazendo" é ${wip} — termine algo antes.`);
+      render();
+      return;
+    }
+  }
+  task.kanbanColumn = nextState;
+  if (nextState === "done" && !task.done) {
+    task.done = true;
+    task.doneAt = new Date().toISOString();
+    await window.PsyduckDB.saveTask(task);
+    await celebrateCompletion(task);
+    render();
+    return;
+  }
+  if (nextState !== "done" && task.done) {
+    task.done = false;
+    task.doneAt = null;
+  }
+  await window.PsyduckDB.saveTask(task);
+  render();
+}
+
+async function setTaskEisenhower(select) {
+  const task = await window.PsyduckDB.dbGet(window.PsyduckDB.STORES.tasks, select.dataset.id);
+  if (!task) return;
+  task.eisenhowerQuadrant = select.value || null;
+  await window.PsyduckDB.saveTask(task);
+  render();
+}
+
+async function setTaskOtf(select) {
+  const task = await window.PsyduckDB.dbGet(window.PsyduckDB.STORES.tasks, select.dataset.id);
+  if (!task) return;
+  const next = select.value || null;
+  task.oneThreeFiveSlot = next;
+  task.oneThreeFiveDate = next ? todayKey() : null;
+  await window.PsyduckDB.saveTask(task);
+  render();
+}
+
+async function setTaskTwoMin(checkbox) {
+  const task = await window.PsyduckDB.dbGet(window.PsyduckDB.STORES.tasks, checkbox.dataset.id);
+  if (!task) return;
+  task.isTwoMinuteTask = checkbox.checked;
+  await window.PsyduckDB.saveTask(task);
+  render();
+}
+
+async function setTaskPareto(checkbox) {
+  const task = await window.PsyduckDB.dbGet(window.PsyduckDB.STORES.tasks, checkbox.dataset.id);
+  if (!task) return;
+  task.paretoHighImpact = checkbox.checked;
+  await window.PsyduckDB.saveTask(task);
+  render();
+}
+
 async function forceUpdate() {
   if ("serviceWorker" in navigator) {
     const regs = await navigator.serviceWorker.getRegistrations();
@@ -886,7 +949,19 @@ async function chooseObsidianFile(fileName) {
   render();
 }
 
-window.PsyduckApp = { quickAddTask, quickAddBook, saveReflectionNote, forceUpdate, chooseObsidianFile };
+window.PsyduckApp = {
+  quickAddTask,
+  quickAddBook,
+  saveReflectionNote,
+  forceUpdate,
+  chooseObsidianFile,
+  setTaskPriority,
+  setTaskKanban,
+  setTaskEisenhower,
+  setTaskOtf,
+  setTaskTwoMin,
+  setTaskPareto,
+};
 
 // ---------- modal de métodos (cheat sheet — voltou a pedido do usuário) ----------
 // Os controles de verdade (Kanban/Eisenhower/1-3-5/ABCD-Z/2min/80-20)

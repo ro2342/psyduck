@@ -554,6 +554,26 @@ textarea { min-height: 50px; resize: vertical; }
   color: var(--text-soft);
 }
 .mini-pill.active { background: var(--accent-orange); color: #fff; border-color: #a85210; }
+.task-mini-field { display: flex; flex-direction: column; }
+.task-mini-field-label { color: var(--text-soft); font-size: 0.58rem; margin-bottom: 1px; }
+.task-mini-field select {
+  font-family: inherit;
+  font-size: 0.68rem;
+  padding: 2px 4px;
+  border: 1px solid var(--border-wood);
+  border-radius: 2px;
+  background: #fff;
+  color: var(--text-soft);
+  max-width: 150px;
+}
+.task-mini-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.68rem;
+  color: var(--text-soft);
+  align-self: flex-end;
+}
 .mini-eisenhower-overview {
   display: grid;
   grid-template-columns: 1fr 1fr;

@@ -834,6 +834,35 @@ já estava corrigido, era cache)**:
    reportar de novo depois de forçar atualização em Ajustes, aí sim
    investigar mais a fundo.
 
+**v0.1.22 (pílulas cíclicas viraram select/checkbox — sem sigla
+cifrada, sem precisar de hover)**: usuário apontou que os controles
+inline de cada tarefa (prioridade, Kanban, Eisenhower, 1-3-5) eram
+botões-pílula que cicla vam de estado a cada clique, mostrando só uma
+sigla curta (ex.: "UI"/"II"/"UN"/"N" pro Eisenhower) — só dava pra
+saber o que cada uma significava passando o mouse (`title="..."`), e
+no celular isso nem existe. Sugestão dele: usar `<select>`/checkbox em
+vez de pílula. Implementado exatamente assim:
+- Prioridade/Kanban/Eisenhower/1-3-5 (`cycle-priority`/`cycle-kanban`/
+  `cycle-eisenhower`/`cycle-otf`, removidos) viraram 4 `<select>` com o
+  nome completo escrito em cada opção (ex.: "Urgente + importante", não
+  "UI") — `renderTaskRowMini` (`app.js`) ganhou um helper `taskSelect()`
+  reaproveitado nos 4. Nativo, então no celular abre o seletor grande
+  do sistema operacional sozinho, sem CSS nenhum extra pra isso.
+- Regra dos 2 Minutos / 80-20 (`toggle-two-min`/`toggle-pareto`,
+  removidos) viraram checkbox de verdade com o texto do rótulo escrito
+  do lado ("Regra dos 2 minutos", "Alto impacto (80/20)") em vez de
+  chip colorido só com a sigla.
+- Toda a lógica de negócio foi preservada 1:1 (limite de WIP do
+  Kanban, XP por prioridade, tombamento de `oneThreeFiveDate`,
+  marcar/desmarcar `done` ao mover de/pra "Feito") — só mudou de
+  clique-cicla-estado pra escolher-direto-da-lista. `PRIORITY_STATES`/
+  `OTF_STATES` (`app.js`) ficaram sem uso (as opções agora estão
+  escritas direto no JSX do select) e foram removidas.
+- Testado via CDP: opções de cada select conferidas (texto completo,
+  não sigla), troca de valor via `select.value = X` +
+  `dispatchEvent(change)` confirmada persistindo no banco (inclusive
+  o caso do Kanban marcando/desmarcando `done` corretamente).
+
 ## Onde ficam as coisas
 
 ```
