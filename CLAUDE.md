@@ -773,6 +773,44 @@ Eisenhower/Pomodoro pediram isso explicitamente até agora. Se o
 usuário pedir as outras, o modal de Técnicas (`renderTechniquesModal`)
 já está montado pra crescer com mais seções.
 
+**v0.1.20 (limpeza da cena + consolidação do modal de Técnicas + fix
+de input responsivo)**:
+1. **Casa vermelha, horta/vaso, cachorro e lago REMOVIDOS da cena**:
+   usuário disse "não entendi aquele lago, aquela casa vermelha e um
+   balcão marrom, poderia retirar" — eram `smallHouse`/`smallGarden`/
+   `smallDog`/`smallLake`, elementos nossos (não vêm do arquivo de
+   referência) sobrepostos por cima da cena de
+   `cenario_pixel_art_16bit-v2.html`. Removidos por completo de
+   `mascot.js` (funções + chamadas), junto com `pineTree`/`roundTree`/
+   `lilyPad` (já estavam mortas, sem uso, desde fixes de sessões
+   anteriores) e todas as variáveis CSS `--scene-*` que só esses
+   elementos usavam (`--scene-barn*`, `--scene-soil*`, `--scene-pot`,
+   `--scene-dog*`, `--scene-lake` [mantido só `--scene-lake-edge`, que
+   também estiliza a borda do `.scene-container`], `--scene-lily*`,
+   `--scene-window`, `--scene-round-leaf`, `--scene-pine`, e um grupo
+   de variáveis já mortas de uma versão ainda mais antiga —
+   `--scene-sky-top/bottom`, `--scene-sun`, `--scene-hill-far/near`,
+   `--scene-reed`, `--scene-cloud`). A cena agora é 100% o que vem de
+   `cenario_pixel_art_16bit-v2.html`, sem nenhuma sobreposição própria
+   — os patos colecionáveis continuam aparecendo normalmente (nunca
+   dependeram desses elementos, são posicionados por hash em `%` sobre
+   toda a cena).
+2. **Modal de Técnicas consolidado**: usuário reclamou que só achava
+   Pomodoro no botão "+" — "não tem kanban, outras coisas, nada nada
+   nada". O quadro Kanban/Eisenhower (que tinha ganhado um botão "▦"
+   separado na v0.1.19) foi fundido no MESMO modal de Técnicas, agora
+   com 3 abas (Pomodoro/Kanban/Eisenhower). O botão "▦" na coluna Todos
+   continua existindo, mas agora só abre o mesmo modal já na aba
+   Kanban (atalho de conveniência, não um modal diferente).
+3. **Input de "+livro" não encolhia com a tela**: `.quick-add-row
+   input` tinha `flex: 1` mas nenhum `min-width: 0` — o comportamento
+   padrão de item flexível (`min-width: auto`) respeita a largura
+   intrínseca do input e não deixa encolher abaixo dela, então em
+   colunas estreitas o campo vazava/não acompanhava o tamanho da tela.
+   Corrigido com `min-width: 0; width: 100%; box-sizing: border-box;`
+   (mesma classe é usada pelo campo de "+ Adicionar tarefa", corrigido
+   de brinde).
+
 ## Onde ficam as coisas
 
 ```

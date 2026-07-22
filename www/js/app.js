@@ -13,9 +13,8 @@
 const root = document.getElementById("app");
 let settingsOpen = false;
 let methodsOpen = false;
-let kanbanModalOpen = false;
-let kanbanModalTab = "kanban";
 let techniquesOpen = false;
+let techniquesTab = "pomodoro"; // pomodoro | kanban | eisenhower
 let focusTimer = null; // TimeboxTimer ativo (rodapé da coluna Livros)
 let pomodoro = null; // PomodoroTimer ativo (modal de Técnicas)
 
@@ -194,8 +193,7 @@ async function render() {
   document.getElementById("modalRoot").innerHTML = `
     ${settingsOpen ? await renderSettingsModal() : ""}
     ${methodsOpen ? renderMethodsModal() : ""}
-    ${kanbanModalOpen ? await renderKanbanModal() : ""}
-    ${techniquesOpen ? renderTechniquesModal() : ""}
+    ${techniquesOpen ? await renderTechniquesModal() : ""}
   `;
 }
 
@@ -327,7 +325,7 @@ function renderTarefasColumn(pending, done) {
       <div class="column-header">
         Todos
         <span class="info-icon" title="Regra dos 2 Minutos: se leva menos de 2min, marque a tag '2min' e faça agora.">ⓘ</span>
-        <button class="board-btn" data-action="open-kanban" title="Abrir quadro Kanban/Eisenhower">▦</button>
+        <button class="board-btn" data-action="open-techniques" data-tab="kanban" title="Abrir quadro Kanban/Eisenhower">▦</button>
       </div>
       <div class="column-content">
         <div class="quick-add-row">
@@ -597,12 +595,17 @@ const actions = {
     if (focusTimer) focusTimer.pause();
     render();
   },
-  "open-techniques"() {
+  "open-techniques"(el) {
     techniquesOpen = true;
+    if (el.dataset.tab) techniquesTab = el.dataset.tab;
     render();
   },
   "close-techniques"() {
     techniquesOpen = false;
+    render();
+  },
+  "techniques-tab"(el) {
+    techniquesTab = el.dataset.tab;
     render();
   },
   "pomodoro-start"() {
@@ -670,19 +673,6 @@ const actions = {
   },
   "close-methods"() {
     methodsOpen = false;
-    render();
-  },
-  "open-kanban"() {
-    kanbanModalOpen = true;
-    kanbanModalTab = "kanban";
-    render();
-  },
-  "close-kanban"() {
-    kanbanModalOpen = false;
-    render();
-  },
-  "kanban-tab"(el) {
-    kanbanModalTab = el.dataset.tab;
     render();
   },
   async "kanban-move"(el) {
@@ -755,30 +745,53 @@ function updatePomodoroDisplay() {
 
 const POMODORO_PHASE_LABELS = { work: "FOCO", break: "PAUSA", longBreak: "PAUSA LONGA" };
 
-function renderTechniquesModal() {
+function renderPomodoroSection() {
   const phase = pomodoro ? pomodoro.phase : "work";
   const remaining = pomodoro ? pomodoro.remainingMs : 25 * 60000;
   const cycles = pomodoro ? pomodoro.cyclesCompleted : 0;
   const running = pomodoro ? pomodoro.running : false;
   return `
+    <section class="window-section">
+      <h2>Pomodoro</h2>
+      <p class="hint">Foco de 25min, pausa de 5min — a cada 4 ciclos, pausa longa de 15min. A pausa começa sozinha; o próximo foco espera você clicar.</p>
+      <p class="dash-level">${POMODORO_PHASE_LABELS[phase]}</p>
+      <p class="timer-display-big" id="pomodoroDisplay">${formatMs(remaining)}</p>
+      <p class="hint">Ciclo ${cycles} de 4</p>
+      <div class="pomodoro-controls">
+        ${running ? `<button class="btn" data-action="pomodoro-pause">Pausar</button>` : `<button class="btn btn-primary" data-action="pomodoro-start">${pomodoro ? "Continuar" : "Começar foco"}</button>`}
+        ${pomodoro ? `<button class="btn" data-action="pomodoro-reset">Reiniciar</button>` : ""}
+      </div>
+    </section>
+  `;
+}
+
+// Um só modal pra tudo que é ferramenta funcional (não cheat-sheet) —
+// Pomodoro, Kanban, Eisenhower — aberto pelo botão "+" na cena OU pelo
+// atalho "▦" na coluna Todos (que já abre direto na aba Kanban).
+// Consolidado numa leva só depois do usuário reclamar que só achava o
+// Pomodoro: "não tem kanban, outras coisas, nada nada nada".
+async function renderTechniquesModal() {
+  const allTasks = techniquesTab !== "pomodoro" ? await window.PsyduckDB.listTasks() : null;
+  const body =
+    techniquesTab === "pomodoro"
+      ? renderPomodoroSection()
+      : techniquesTab === "kanban"
+      ? renderKanbanBoard(allTasks)
+      : renderEisenhowerBoard(allTasks.filter((t) => !t.done));
+  return `
     <div class="modal-overlay show">
-      <div class="window-frame">
+      <div class="window-frame window-frame--wide">
         <div class="window-title-bar">
           <span>Técnicas</span>
           <button class="window-close-btn" data-action="close-techniques">X</button>
         </div>
         <div class="window-body">
-          <section class="window-section">
-            <h2>Pomodoro</h2>
-            <p class="hint">Foco de 25min, pausa de 5min — a cada 4 ciclos, pausa longa de 15min. A pausa começa sozinha; o próximo foco espera você clicar.</p>
-            <p class="dash-level">${POMODORO_PHASE_LABELS[phase]}</p>
-            <p class="timer-display-big" id="pomodoroDisplay">${formatMs(remaining)}</p>
-            <p class="hint">Ciclo ${cycles} de 4</p>
-            <div class="pomodoro-controls">
-              ${running ? `<button class="btn" data-action="pomodoro-pause">Pausar</button>` : `<button class="btn btn-primary" data-action="pomodoro-start">${pomodoro ? "Continuar" : "Começar foco"}</button>`}
-              ${pomodoro ? `<button class="btn" data-action="pomodoro-reset">Reiniciar</button>` : ""}
-            </div>
-          </section>
+          <div class="kanban-tabs">
+            <button class="btn ${techniquesTab === "pomodoro" ? "active" : ""}" data-action="techniques-tab" data-tab="pomodoro">Pomodoro</button>
+            <button class="btn ${techniquesTab === "kanban" ? "active" : ""}" data-action="techniques-tab" data-tab="kanban">Kanban</button>
+            <button class="btn ${techniquesTab === "eisenhower" ? "active" : ""}" data-action="techniques-tab" data-tab="eisenhower">Eisenhower</button>
+          </div>
+          ${body}
         </div>
       </div>
     </div>
@@ -907,34 +920,12 @@ function renderMethodsModal() {
   `;
 }
 
-// ---------- modal de Kanban/Eisenhower de verdade ----------
+// ---------- Kanban/Eisenhower de verdade (helpers usados dentro do
+// modal de Técnicas, ver renderTechniquesModal acima) ----------
 // Pedido explícito do usuário (v0.1.19): as pílulas inline continuam
 // existindo (jeito rápido de mudar uma tarefa só), mas agora também dá
 // pra ver o quadro inteiro — 3 colunas de verdade ou os 4 quadrantes —
-// numa janela por cima do dashboard, sem virar rota/página nova.
-
-async function renderKanbanModal() {
-  const allTasks = await window.PsyduckDB.listTasks();
-  const body =
-    kanbanModalTab === "kanban" ? renderKanbanBoard(allTasks) : renderEisenhowerBoard(allTasks.filter((t) => !t.done));
-  return `
-    <div class="modal-overlay show">
-      <div class="window-frame window-frame--wide">
-        <div class="window-title-bar">
-          <span>Quadro</span>
-          <button class="window-close-btn" data-action="close-kanban">X</button>
-        </div>
-        <div class="window-body">
-          <div class="kanban-tabs">
-            <button class="btn ${kanbanModalTab === "kanban" ? "active" : ""}" data-action="kanban-tab" data-tab="kanban">Kanban</button>
-            <button class="btn ${kanbanModalTab === "eisenhower" ? "active" : ""}" data-action="kanban-tab" data-tab="eisenhower">Eisenhower</button>
-          </div>
-          ${body}
-        </div>
-      </div>
-    </div>
-  `;
-}
+// numa aba do modal de Técnicas, sem virar rota/página nova.
 
 function renderKanbanBoard(allTasks) {
   const cols = KANBAN_STATES.map(([key, label]) => {

@@ -22,30 +22,8 @@
   --warn-text: #a63d1d;
   --radius: 2px;
   --shadow: 3px 3px 0 rgba(60, 40, 15, 0.35);
-  --scene-sky-top: #a8d8f0;
-  --scene-sky-bottom: #fce7b8;
-  --scene-sun: #ffd23f;
-  --scene-hill-far: #bfe3b0;
-  --scene-hill-near: #93cf8a;
-  --scene-barn: #d9695a;
-  --scene-barn-roof: #7a3b30;
-  --scene-barn-door: #5c2a22;
-  --scene-lake: #7cc3d8;
   --scene-lake-edge: #ffffff;
-  --scene-reed: #5c8a4a;
-  --scene-cloud: #ffffff;
-  --scene-lily: #4a8a4f;
-  --scene-lily-flower: #f3a8c4;
   --scene-trunk: #7a5230;
-  --scene-pine: #3f7a4a;
-  --scene-round-leaf: #6bab55;
-  --scene-barn-roof-dark: #5c2a22;
-  --scene-window: #bfe6f0;
-  --scene-soil-frame: #7a5230;
-  --scene-soil: #5c3d22;
-  --scene-pot: #a85c3a;
-  --scene-dog: #c98a4f;
-  --scene-dog-dark: #a86a35;
   font-size: 16px;
 }
 
@@ -502,8 +480,11 @@ textarea { min-height: 50px; resize: vertical; }
 }
 .quick-add-row input {
   flex: 1;
+  min-width: 0;
+  width: 100%;
   font-size: 0.78rem;
   padding: 6px 8px;
+  box-sizing: border-box;
 }
 
 /* moedas */
