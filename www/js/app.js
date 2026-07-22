@@ -182,7 +182,7 @@ async function render() {
 
   document.getElementById("woodenDashboard").innerHTML = `
     ${await renderMoedasColumn(state)}
-    ${renderLembretesColumn(pending)}
+    ${await renderLembretesColumn(pending)}
     ${renderTarefasColumn(pending, tasks.filter((t) => t.done))}
     ${renderFazendaColumn(ducks)}
     ${renderLivrosColumn(books)}
@@ -267,12 +267,13 @@ async function renderMoedasColumn(state) {
 
 // ---------- coluna: Lembretes ----------
 
-function renderLembretesColumn(pending) {
+async function renderLembretesColumn(pending) {
   const withReminders = pending
     .filter((t) => t.remindAt || t.dueAt)
     .sort((a, b) => new Date(a.remindAt || a.dueAt) - new Date(b.remindAt || b.dueAt))
     .slice(0, 8);
   const stars = { A: "★★★", B: "★★", C: "★", D: "★" };
+  const notes = await window.PsyduckDB.listNotes();
 
   return `
     <section class="column col-lembretes">
@@ -291,8 +292,23 @@ function renderLembretesColumn(pending) {
             })
             .join("") || `<p class="empty">Nada marcado.</p>`
         }
+        <div class="lembretes-notes-divider hint">Notas rápidas</div>
+        <div class="quick-add-row">
+          <input type="text" placeholder="+ nota (Enter)" onkeydown="if(event.key==='Enter') window.PsyduckApp.quickAddNote(this)" />
+        </div>
+        ${
+          notes
+            .map(
+              (n) => `
+          <div class="note-card">
+            <span class="note-text">${escapeHtml(n.text)}</span>
+            <button class="mini-pill" data-action="note-delete" data-id="${n.id}" title="Excluir">🗑</button>
+          </div>`
+            )
+            .join("") || `<p class="empty">Nenhuma nota ainda.</p>`
+        }
       </div>
-      <div class="column-footer">prazo ou lembrete definido na tarefa</div>
+      <div class="column-footer">prazo/lembrete da tarefa acima, notas soltas aqui embaixo</div>
     </section>
   `;
 }
@@ -552,6 +568,10 @@ const actions = {
   async "task-delete"(el) {
     if (!confirm("Excluir essa tarefa?")) return;
     await window.PsyduckDB.deleteTask(el.dataset.id);
+    render();
+  },
+  async "note-delete"(el) {
+    await window.PsyduckDB.deleteNote(el.dataset.id);
     render();
   },
   async "book-advance"(el) {
@@ -843,6 +863,14 @@ async function quickAddBook(input) {
   render();
 }
 
+async function quickAddNote(input) {
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = "";
+  await window.PsyduckDB.saveNote({ text });
+  render();
+}
+
 async function saveReflectionNote(input) {
   const task = await window.PsyduckDB.dbGet(window.PsyduckDB.STORES.tasks, input.dataset.id);
   if (!task) return;
@@ -952,6 +980,7 @@ async function chooseObsidianFile(fileName) {
 window.PsyduckApp = {
   quickAddTask,
   quickAddBook,
+  quickAddNote,
   saveReflectionNote,
   forceUpdate,
   chooseObsidianFile,

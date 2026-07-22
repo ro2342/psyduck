@@ -863,6 +863,24 @@ vez de pílula. Implementado exatamente assim:
   `dispatchEvent(change)` confirmada persistindo no banco (inclusive
   o caso do Kanban marcando/desmarcando `done` corretamente).
 
+**v0.1.23 (notas rápidas na coluna Lembretes)**: usuário pediu pra
+Lembretes funcionar também como bloco de notas — "eu possa lembrar de
+coisas que eu ponho lá", com botão de adicionar. Antes, a coluna só
+mostrava tarefas com `dueAt`/`remindAt` (nada de texto livre solto).
+Adicionado:
+- `STORES.notes` novo (`db.js`, `DB_VERSION` 3→4): `{ id, text,
+  deleted, updatedAt }`, mesmo padrão de tombstone das tarefas.
+  `listNotes()`/`saveNote()`/`deleteNote()` seguem 1:1 o desenho de
+  `listBooks()`/`saveBook()` já existente.
+- `renderLembretesColumn` (`app.js`) ganhou uma segunda seção, "Notas
+  rápidas", com o mesmo padrão de `quick-add-row` (+ Enter) usado em
+  Tarefas/Livros, lista ordenada por mais recente primeiro, cada nota
+  com botão de excluir (tombstone, não sync ainda quebra nada porque
+  `notes` já entrou em `COLLECTION_STORES` do `sync.js` de cara —
+  sincroniza junto com o resto assim que o usuário logar).
+- A parte de tarefas-com-prazo continua exatamente igual, só ganhou
+  uma companhia embaixo — não substituiu nada.
+
 ## Onde ficam as coisas
 
 ```
@@ -872,7 +890,7 @@ www/
 └── js/
     ├── app.js          ← dashboard de tela única — 1 função `render()`, sem rotas; colunas + modal de Ajustes + ações delegadas (data-action)
     ├── data.js         ← UI_STRINGS, METHOD_CONFIGS (os 10 métodos), BADGE_CONFIGS, APP_VERSION
-    ├── db.js           ← IndexedDB. STORES: tasks, projects, timeAuditLog, profile, gamification, ducks, books, obsidianHandle
+    ├── db.js           ← IndexedDB. STORES: tasks, projects, timeAuditLog, profile, gamification, ducks, books, obsidianHandle, notes
     ├── gamification.js ← cálculo de XP/nível/sequência/moedas, checagem de badge
     ├── mascot.js       ← mascote/patinhos/cena da fazenda (SVG pixel art desenhado à mão)
     ├── methods.js      ← TimeboxTimer (timer simples), PomodoroTimer (ciclo foco/pausa de verdade), formatCountdown

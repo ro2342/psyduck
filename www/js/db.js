@@ -5,7 +5,7 @@
 // nasce pronto pra quando o Firestore entrar na v0.2.
 
 const DB_NAME = "psyduck";
-const DB_VERSION = 3; // v3: adiciona STORES.books e STORES.obsidianHandle
+const DB_VERSION = 4; // v4: adiciona STORES.notes
 
 const STORES = {
   tasks: "tasks", // { id, title, notes, projectId, dueAt, remindAt, priorityLetter, eisenhowerQuadrant, kanbanColumn, oneThreeFiveSlot, oneThreeFiveDate, isTwoMinuteTask, paretoHighImpact, timeboxMinutes, pomodoroSessionsLogged, xpValue, done, doneAt, deleted, obsidianFile, obsidianLineIndex, updatedAt }
@@ -16,6 +16,7 @@ const STORES = {
   ducks: "ducks", // { id, variantId, name, obtainedAt, sourceLabel, updatedAt } — a família de Psyducks da fazenda
   books: "books", // { id, title, author, currentChapter, coverUrl, updatedAt } — rastreador de leitura
   obsidianHandle: "obsidianHandle", // { key: 'vault', handle: FileSystemDirectoryHandle } — só existe em desktop Chrome/Edge
+  notes: "notes", // { id, text, deleted, updatedAt } — post-its rápidos na coluna Lembretes, sem prazo/tarefa associada
 };
 
 let dbInstance = null;
@@ -34,6 +35,7 @@ function openDB() {
       if (!db.objectStoreNames.contains(STORES.ducks)) db.createObjectStore(STORES.ducks, { keyPath: "id" });
       if (!db.objectStoreNames.contains(STORES.books)) db.createObjectStore(STORES.books, { keyPath: "id" });
       if (!db.objectStoreNames.contains(STORES.obsidianHandle)) db.createObjectStore(STORES.obsidianHandle, { keyPath: "key" });
+      if (!db.objectStoreNames.contains(STORES.notes)) db.createObjectStore(STORES.notes, { keyPath: "id" });
     };
     req.onsuccess = () => {
       dbInstance = req.result;
@@ -290,6 +292,29 @@ async function advanceBookChapter(id) {
   return book;
 }
 
+// ---------- notas rápidas (coluna Lembretes) ----------
+
+async function listNotes() {
+  const rows = await dbGetAll(STORES.notes);
+  return rows.filter((n) => !n.deleted).sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+}
+
+async function saveNote(note) {
+  const full = Object.assign({ id: uid(), text: "" }, note, { updatedAt: new Date().toISOString() });
+  await dbPut(STORES.notes, full);
+  notifyChange();
+  return full;
+}
+
+async function deleteNote(id) {
+  const note = await dbGet(STORES.notes, id);
+  if (!note) return;
+  note.deleted = true;
+  note.updatedAt = new Date().toISOString();
+  await dbPut(STORES.notes, note);
+  notifyChange();
+}
+
 window.PsyduckDB = {
   STORES,
   dbGet,
@@ -316,4 +341,7 @@ window.PsyduckDB = {
   saveGamificationState,
   listDucks,
   addDuck,
+  listNotes,
+  saveNote,
+  deleteNote,
 };

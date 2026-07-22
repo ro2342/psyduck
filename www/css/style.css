@@ -518,6 +518,24 @@ textarea { min-height: 50px; resize: vertical; }
 }
 .reminder-title { flex: 1; }
 .reminder-stars { color: var(--accent-orange); font-size: 0.65rem; }
+.lembretes-notes-divider {
+  margin: 10px 0 4px;
+  padding-top: 6px;
+  border-top: 2px dashed var(--border);
+  font-family: var(--font-pixel-display);
+  font-size: 0.58rem;
+  text-transform: uppercase;
+}
+.note-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.78rem;
+}
+.note-card:last-child { border-bottom: none; }
+.note-text { flex: 1; white-space: pre-wrap; word-break: break-word; }
 
 /* tarefas (compactas, com controles inline de todos os métodos) */
 .task-row-mini {

@@ -15,7 +15,7 @@
 const FIRESTORE_PROJECT_ID = "psyduck-42";
 
 // Stores tipo coleção (muitos registros, merge por-registro).
-const COLLECTION_STORES = ["tasks", "projects", "timeAuditLog", "ducks", "books"];
+const COLLECTION_STORES = ["tasks", "projects", "timeAuditLog", "ducks", "books", "notes"];
 const SYNC_DEBOUNCE_MS = 5000;
 
 let syncDebounceTimer = null;
